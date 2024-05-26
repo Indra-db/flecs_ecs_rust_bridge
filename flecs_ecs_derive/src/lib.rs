@@ -751,7 +751,7 @@ fn check_repr_c(input: &syn::DeriveInput) -> bool {
                 while !input.is_empty() {
                     let path = input.call(syn::Path::parse_mod_style)?;
 
-                    if path.is_ident("C") {
+                    if path.is_ident("C") || path.is_ident("i32") || path.is_ident("u32") {
                         found_repr_c = true;
                         break;
                     }

@@ -13,6 +13,7 @@ use crate::addons::system::{System, SystemBuilder};
 #[cfg(feature = "flecs_pipeline")]
 use crate::addons::pipeline::PipelineBuilder;
 
+use crate::addons::meta;
 use crate::core::*;
 use crate::sys;
 
@@ -96,6 +97,42 @@ impl World {
     fn init_builtin_components(&self) {
         // used for event handling with no data
         self.component_named::<()>("flecs::rust::() - None");
+
+        #[cfg(feature = "flecs_meta")]
+        {
+            self.component_named::<bool>("flecs::meta::bool");
+            self.component_named::<char>("flecs::meta::char");
+            self.component_named::<u8>("flecs::meta::u8");
+            self.component_named::<u16>("flecs::meta::u16");
+            self.component_named::<u32>("flecs::meta::u32");
+            self.component_named::<u64>("flecs::meta::u64");
+            self.component_named::<usize>("flecs::meta::usize");
+            self.component_named::<i8>("flecs::meta::i8");
+            self.component_named::<i16>("flecs::meta::i16");
+            self.component_named::<i32>("flecs::meta::i32");
+            self.component_named::<i64>("flecs::meta::i64");
+            self.component_named::<isize>("flecs::meta::isize");
+            self.component_named::<f32>("flecs::meta::f32");
+            self.component_named::<f64>("flecs::meta::f64");
+
+            self.component_named::<meta::EcsTypeKind>("flecs::meta::type_kind");
+            self.component_named::<meta::EcsPrimitiveKind>("flecs::meta::primitive_kind");
+            self.component_named::<meta::MemberT>("flecs::meta::member_t");
+            self.component_named::<meta::EnumConstantT>("flecs::meta::enum_constant");
+            self.component_named::<meta::BitmaskConstantT>("flecs::meta::bitmask_constant");
+
+            self.component_named::<meta::Type>("flecs::meta::type");
+            self.component_named::<meta::TypeSerializer>("flecs::meta::type_serializer");
+            self.component_named::<meta::Primitive>("flecs::meta::primitive");
+            self.component_named::<meta::Enum>("flecs::meta::enum");
+            self.component_named::<meta::Bitmask>("flecs::meta::bitmask");
+            self.component_named::<meta::Member>("flecs::meta::member");
+            self.component_named::<meta::MemberRanges>("flecs::meta::member_ranges");
+            self.component_named::<meta::Struct>("flecs::meta::struct");
+            self.component_named::<meta::Array>("flecs::meta::array");
+            self.component_named::<meta::Vector>("flecs::meta::vector");
+            self.component_named::<meta::Unit>("flecs::meta::unit");
+        }
     }
 
     /// deletes and recreates the world
