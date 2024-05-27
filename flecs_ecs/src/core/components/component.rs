@@ -35,12 +35,12 @@ impl<'a, T: ComponentId> Component<'a, T> {
     /// * C++ API: `component::component`
     #[doc(alias = "component::component")]
     pub fn new(world: impl IntoWorld<'a>) -> Self {
-        let world = world.world();
-        let id = T::__register_or_get_id::<false>(world);
+        if !T::is_registered_with_world(world.world()) {
+            T::register_explicit(world.world());
+        }
 
-        let world = world.world();
         Self {
-            base: UntypedComponent::new(world, id),
+            base: UntypedComponent::new(world, unsafe { T::get_id_unchecked() }),
             _marker: PhantomData,
         }
     }
@@ -57,11 +57,12 @@ impl<'a, T: ComponentId> Component<'a, T> {
     /// * C++ API: `component::component`
     #[doc(alias = "component::component")]
     pub fn new_named(world: impl IntoWorld<'a>, name: &str) -> Self {
-        let id = T::__register_or_get_id_named::<false>(world.world(), name);
+        if !T::is_registered_with_world(world.world()) {
+            T::register_explicit_named(world.world(), name);
+        }
 
-        let world = world.world();
         Self {
-            base: UntypedComponent::new(world, id),
+            base: UntypedComponent::new(world, unsafe { T::get_id_unchecked() }),
             _marker: PhantomData,
         }
     }
@@ -293,36 +294,6 @@ impl<'a, T: ComponentId> Component<'a, T> {
         let component: *mut T = unsafe { ecs_field::<T>(iter, 0) };
         on_remove(entity, unsafe { &mut *component });
     }
-}
-
-#[cfg(feature = "flecs_meta")]
-impl<'a, T: ComponentId> Component<'a, T> {
-    // todo!("Check if this is correctly ported")
-    /// # See also
-    ///
-    /// * C++ API: `component::opque`
-    #[doc(alias = "component::opque")]
-    pub fn opaque<OpaqueType>(&mut self) -> &mut Self
-    where
-        OpaqueType: ComponentId,
-    {
-        let mut ts = Opaque::<OpaqueType>::new(self.world);
-        ts.desc.entity = T::id(self.world);
-        unsafe { sys::ecs_opaque_init(self.world.world_ptr_mut(), &ts.desc) };
-        self
-    }
-
-    /// # See also
-    ///
-    /// * C++ API: `component::opaque`
-    #[doc(alias = "component::opaque")]
-    pub fn opaque_id(&mut self, as_type: impl Into<Entity>) -> Opaque<'a, T> {
-        let mut opaque = Opaque::<T>::new(self.world);
-        opaque.as_type(as_type.into());
-        opaque
-    }
-
-    //todo!("untyped component constant function")
 }
 
 mod eq_operations {

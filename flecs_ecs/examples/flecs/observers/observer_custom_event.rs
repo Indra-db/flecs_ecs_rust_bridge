@@ -35,7 +35,7 @@ fn main() {
     world
         .event()
         .add::<Position>()
-        .target(entity)
+        .entity(entity)
         .emit(&MyEvent);
 
     // Output:

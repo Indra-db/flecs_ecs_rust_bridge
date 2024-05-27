@@ -143,17 +143,17 @@ impl<'a, T: ComponentId> EventBuilder<'a, T> {
         self.add_id(ecs_pair(*first.into(), Second::id(world)))
     }
 
-    /// Set the entity to emit for the event
+    /// Set the target entity to emit for the event
     ///
     /// # Arguments
     ///
-    /// * `entity` - The entity to emit for the event
+    /// * `entity` - The target entity to emit for the event
     ///
     /// # See also
     ///
     /// * C++ API: `event_builder_base::entity`
     #[doc(alias = "event_builder_base::entity")]
-    pub fn target(&mut self, entity: impl Into<Entity>) -> &mut Self {
+    pub fn entity(&mut self, entity: impl Into<Entity>) -> &mut Self {
         let desc = &mut self.desc;
         desc.entity = *entity.into();
         self
