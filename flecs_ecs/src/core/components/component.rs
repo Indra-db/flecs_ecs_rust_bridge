@@ -5,9 +5,6 @@ use std::{marker::PhantomData, ops::Deref, os::raw::c_void, ptr};
 use crate::core::*;
 use crate::sys;
 
-#[cfg(feature = "flecs_meta")]
-use crate::addons::meta::Opaque;
-
 /// Component class.
 /// Class used to register components and component metadata.
 pub struct Component<'a, T: ComponentId> {

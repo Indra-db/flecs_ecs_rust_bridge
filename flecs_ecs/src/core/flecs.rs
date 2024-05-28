@@ -2,6 +2,7 @@
 use std::ops::Deref;
 
 use crate::core::*;
+use crate::sys;
 
 #[doc(hidden)]
 pub trait FlecsTrait {}
@@ -16,6 +17,13 @@ macro_rules! create_pre_registered_component {
         }
 
         impl FlecsTrait for $struct_name {}
+
+        impl From<$struct_name> for flecs_ecs::core::Entity {
+            #[inline]
+            fn from(_view: $struct_name) -> Self {
+                flecs_ecs::core::Entity($struct_name::ID)
+            }
+        }
 
         impl Deref for $struct_name {
             type Target = u64;
@@ -264,6 +272,7 @@ pub mod meta {
     create_pre_registered_component!(Char, ECS_CHAR_T);
     create_pre_registered_component!(Byte, ECS_BYTE_T);
     create_pre_registered_component!(U8, ECS_U8_T);
+    create_pre_registered_component!(U16, ECS_U16_T);
     create_pre_registered_component!(U32, ECS_U32_T);
     create_pre_registered_component!(U64, ECS_U64_T);
     create_pre_registered_component!(UPtr, ECS_UPTR_T);
@@ -276,22 +285,36 @@ pub mod meta {
     create_pre_registered_component!(F64, ECS_F64_T);
     create_pre_registered_component!(String, ECS_STRING_T);
     create_pre_registered_component!(Entity, ECS_ENTITY_T);
-
-    // Meta type components
-    create_pre_registered_component!(Type, ECS_META_TYPE);
-    create_pre_registered_component!(TypeSerialized, ECS_META_TYPE_SERIALIZED);
-    create_pre_registered_component!(Primitive, ECS_PRIMITIVE);
-    create_pre_registered_component!(Enum, ECS_ENUM);
-    create_pre_registered_component!(Bitmask, ECS_BITMASK);
-    create_pre_registered_component!(Member, ECS_MEMBER);
-    create_pre_registered_component!(StructT, ECS_STRUCT);
-    create_pre_registered_component!(Array, ECS_ARRAY);
-    create_pre_registered_component!(Vector, ECS_VECTOR);
-    create_pre_registered_component!(Opaque, ECS_OPAQUE);
-    create_pre_registered_component!(Unit, ECS_UNIT);
-    create_pre_registered_component!(UnitPrefix, ECS_UNIT_PREFIX);
     create_pre_registered_component!(Constant, ECS_CONSTANT);
     create_pre_registered_component!(Quantity, ECS_QUANTITY);
+    create_pre_registered_component!(EcsOpaque, ECS_OPAQUE);
+
+    // Meta type components
+    pub type Type = sys::EcsType;
+    pub type TypeSerializer = sys::EcsTypeSerializer;
+    pub type Primitive = sys::EcsPrimitive;
+    pub type EcsEnum = sys::EcsEnum;
+    pub type Bitmask = sys::EcsBitmask;
+    pub type Member = sys::EcsMember;
+    pub type MemberRanges = sys::EcsMemberRanges;
+    pub type EcsStruct = sys::EcsStruct;
+    pub type Array = sys::EcsArray;
+    pub type Vector = sys::EcsVector;
+    pub type Unit = sys::EcsUnit;
+    pub type UnitPrefix = sys::EcsUnitPrefix;
+
+    crate::impl_component_traits_binding_type_w_id!(Type, ECS_META_TYPE);
+    crate::impl_component_traits_binding_type_w_id!(TypeSerializer, ECS_META_TYPE_SERIALIZER);
+    crate::impl_component_traits_binding_type_w_id!(Primitive, ECS_PRIMITIVE);
+    crate::impl_component_traits_binding_type_w_id!(EcsEnum, ECS_ENUM);
+    crate::impl_component_traits_binding_type_w_id!(Bitmask, ECS_BITMASK);
+    crate::impl_component_traits_binding_type_w_id!(Member, ECS_MEMBER);
+    crate::impl_component_traits_binding_type_w_id!(MemberRanges, ECS_MEMBER_RANGES);
+    crate::impl_component_traits_binding_type_w_id!(EcsStruct, ECS_STRUCT);
+    crate::impl_component_traits_binding_type_w_id!(Array, ECS_ARRAY);
+    crate::impl_component_traits_binding_type_w_id!(Vector, ECS_VECTOR);
+    crate::impl_component_traits_binding_type_w_id!(Unit, ECS_UNIT);
+    crate::impl_component_traits_binding_type_w_id!(UnitPrefix, ECS_UNIT_PREFIX);
 }
 
 // Doc module components

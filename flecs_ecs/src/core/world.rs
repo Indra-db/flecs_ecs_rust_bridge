@@ -3,8 +3,6 @@
 use std::ffi::CStr;
 use std::{os::raw::c_void, ptr::NonNull};
 
-use sys::{EcsIdentifier, EcsPoly};
-
 #[cfg(feature = "flecs_app")]
 use crate::addons::app::App;
 
@@ -17,8 +15,6 @@ use crate::addons::pipeline::PipelineBuilder;
 use crate::addons::meta;
 use crate::core::*;
 use crate::sys;
-
-use self::flecs::Poly;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct World {
@@ -81,49 +77,13 @@ impl World {
     fn init_builtin_components(&self) {
         self.component::<()>();
 
-        //TODO Poly + identifier?
-
-        //#[cfg(feature = "flecs_system")]
-        // System::system_init(self);
-        //#[cfg(feature = "flecs_timer")]
-        //todo!();
-        //#[cfg(feature = "flecs_doc")]
-        //todo!();
-        #[cfg(feature = "flecs_rest")]
         #[cfg(feature = "flecs_meta")]
         {
-            self.component_named::<bool>("flecs::meta::bool");
-            //self.component_named::<char>("flecs::meta::char");
-            // self.component_named::<u8>("flecs::meta::u8");
-            // self.component_named::<u16>("flecs::meta::u16");
-            // self.component_named::<u32>("flecs::meta::u32");
-            //self.component_named::<u64>("flecs::meta::u64");
-            self.component_named::<usize>("flecs::meta::usize");
-            // self.component_named::<i8>("flecs::meta::i8");
-            // self.component_named::<i16>("flecs::meta::i16");
-            // self.component_named::<i32>("flecs::meta::i32");
-            self.component_named::<i64>("flecs::meta::i64");
-            self.component_named::<isize>("flecs::meta::isize");
-            //self.component_named::<f32>("flecs::meta::f32");
-            //self.component_named::<f64>("flecs::meta::f64");
-
-            self.component_named::<sys::ecs_type_kind_t>("flecs::meta::type_kind");
+            //self.component_named::<sys::ecs_type_kind_t>("flecs::meta::type_kind");
             // self.component_named::<meta::EcsPrimitiveKind>("flecs::meta::primitive_kind");
             // self.component_named::<meta::MemberT>("flecs::meta::member_t");
             // self.component_named::<meta::EnumConstantT>("flecs::meta::enum_constant");
             // self.component_named::<meta::BitmaskConstantT>("flecs::meta::bitmask_constant");
-
-            // self.component_named::<meta::Type>("flecs::meta::type");
-            // self.component_named::<meta::TypeSerializer>("flecs::meta::type_serializer");
-            // self.component_named::<meta::Primitive>("flecs::meta::primitive");
-            // self.component_named::<meta::Enum>("flecs::meta::enum");
-            // self.component_named::<meta::Bitmask>("flecs::meta::bitmask");
-            // self.component_named::<meta::Member>("flecs::meta::member");
-            // self.component_named::<meta::MemberRanges>("flecs::meta::member_ranges");
-            // self.component_named::<meta::Struct>("flecs::meta::struct");
-            // self.component_named::<meta::Array>("flecs::meta::array");
-            // self.component_named::<meta::Vector>("flecs::meta::vector");
-            // self.component_named::<meta::Unit>("flecs::meta::unit");
         }
     }
 

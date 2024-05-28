@@ -11,10 +11,8 @@ pub use cursor::*;
 pub use declarations::*;
 pub use opaque::*;
 
-use crate::core::{
-    ecs_assert, Component, ComponentId, Entity, EntityView, FlecsErrorCode, IntoWorld, World,
-    WorldRef,
-};
+use crate::core::*;
+
 use crate::sys;
 
 impl World {
@@ -144,22 +142,337 @@ impl<'a, T: ComponentId> Component<'a, T> {
         opaque
     }
 
-    // TODO
+    /// # See also
+    ///
+    /// * C++ API: `component::opaque`
+    pub fn opaque<TypeId: ComponentId>(&self) -> Opaque<'a, T> {
+        self.opaque_id(TypeId::get_id(self.world()))
+    }
+
+    //TODO figure out if it should be into<Entity> or IntoId
+    /// Return opaque type builder for collection type
+    /// # See also
+    ///
+    /// * C++ API: `component::opaque`
+    pub fn opaque_collection<ElemType>(
+        &self,
+        type_id: impl Into<Entity>,
+    ) -> Opaque<'a, T, ElemType> {
+        let mut opaque = Opaque::<T, ElemType>::new(self.world());
+        opaque.as_type(type_id);
+        opaque
+    }
+
+    /// Add constant.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `component::constant`
+    pub fn constant(&self, name: &str, value: impl Into<i32>) -> &Self {
+        UntypedComponent::constant(&self, name, value);
+        self
+    }
+}
+
+impl<'a> UntypedComponent<'a> {
+    /// Add constant.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `untyped_component::constant`
+    pub fn constant(&self, name: &str, value: impl Into<i32>) -> &Self {
+        let name = compact_str::format_compact!("{}\0", name);
+        let value: i32 = value.into();
+        let world = self.world_ptr_mut();
+        let id = *self.id;
+
+        unsafe { sys::ecs_add_id(world, id, flecs::meta::EcsEnum::ID) };
+
+        let desc = sys::ecs_entity_desc_t {
+            name: name.as_ptr() as *const i8,
+            parent: id,
+            ..Default::default()
+        };
+        let eid = unsafe { sys::ecs_entity_init(world, &desc) };
+        ecs_assert!(
+            eid != 0,
+            FlecsErrorCode::InternalError,
+            "failed to create entity"
+        );
+
+        unsafe {
+            sys::ecs_set_id(
+                world,
+                eid,
+                ecs_pair(flecs::meta::Constant::ID, flecs::meta::I32::ID),
+                std::mem::size_of::<i32>(),
+                &value as *const i32 as *const c_void,
+            )
+        };
+        self
+    }
+
+    /// Add member with unit.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `untyped_component::member`
+    pub fn member_id_unit(
+        &self,
+        type_id: impl Into<Entity>,
+        unit: impl Into<Entity>,
+        name: &str,
+        count: i32,
+        offset: i32,
+    ) -> &Self {
+        let name = compact_str::format_compact!("{}\0", name);
+        let world = self.world_ptr_mut();
+        let id = *self.id;
+        let type_id = *type_id.into();
+        let unit = *unit.into();
+
+        let desc = sys::ecs_entity_desc_t {
+            name: name.as_ptr() as *const i8,
+            parent: id,
+            ..Default::default()
+        };
+        let eid = unsafe { sys::ecs_entity_init(world, &desc) };
+        ecs_assert!(
+            eid != 0,
+            FlecsErrorCode::InternalError,
+            "failed to create entity"
+        );
+
+        let entity = EntityView::new_from(self.world(), eid);
+
+        let member: sys::EcsMember = sys::EcsMember {
+            type_: type_id,
+            unit: unit,
+            count,
+            offset,
+        };
+
+        entity.set(member);
+        self
+    }
+
+    /// Add member.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `untyped_component::member`
+    pub fn member_id(
+        &self,
+        type_id: impl Into<Entity>,
+        name: &str,
+        count: i32,
+        offset: i32,
+    ) -> &Self {
+        self.member_id_unit(type_id, 0, name, count, offset)
+    }
+
+    /// Add member.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `untyped_component::member`
+    pub fn member_type<T: ComponentId>(&self, name: &str, count: i32, offset: i32) -> &Self {
+        self.member_id(T::get_id(self.world()), name, count, offset)
+    }
+
+    /// Add member with unit.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `untyped_component::member`
+    pub fn member_unit<T: ComponentId>(
+        &self,
+        unit: impl Into<Entity>,
+        name: &str,
+        count: i32,
+        offset: i32,
+    ) -> &Self {
+        self.member_id_unit(T::get_id(self.world()), unit, name, count, offset)
+    }
+
+    /// Add member with unit typed.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `untyped_component::member`
+    pub fn member<T: ComponentId, U: ComponentId>(
+        &self,
+        name: &str,
+        count: i32,
+        offset: i32,
+    ) -> &Self {
+        self.member_id_unit(
+            T::get_id(self.world()),
+            U::get_id(self.world()),
+            name,
+            count,
+            offset,
+        )
+    }
+
+    //TODO
+
     /*
-        /** Return opaque type builder for collection type */
-    template <typename ElemType>
-    flecs::opaque<T, ElemType> opaque(flecs::id_t as_type) {
-        return flecs::opaque<T, ElemType>(world_).as_type(as_type);
+    /** Add member using pointer-to-member. */
+    template <typename MemberType, typename ComponentType, typename RealType = typename std::remove_extent<MemberType>::type>
+    untyped_component& member(const char* name, const MemberType ComponentType::* ptr) {
+        flecs::entity_t type_id = _::type<RealType>::id(world_);
+        size_t offset = reinterpret_cast<size_t>(&(static_cast<ComponentType*>(nullptr)->*ptr));
+        return member(type_id, name, std::extent<MemberType>::value, offset);
     }
 
-    /** Add constant. */
-    component<T>& constant(const char *name, T value) {
-        int32_t v = static_cast<int32_t>(value);
-        untyped_component::constant(name, v);
-        return *this;
+    /** Add member with unit using pointer-to-member. */
+    template <typename MemberType, typename ComponentType, typename RealType = typename std::remove_extent<MemberType>::type>
+    untyped_component& member(flecs::entity_t unit, const char* name, const MemberType ComponentType::* ptr) {
+        flecs::entity_t type_id = _::type<RealType>::id(world_);
+        size_t offset = reinterpret_cast<size_t>(&(static_cast<ComponentType*>(nullptr)->*ptr));
+        return member(type_id, unit, name, std::extent<MemberType>::value, offset);
     }
 
-         */
+    /** Add member with unit using pointer-to-member. */
+    template <typename UnitType, typename MemberType, typename ComponentType, typename RealType = typename std::remove_extent<MemberType>::type>
+    untyped_component& member(const char* name, const MemberType ComponentType::* ptr) {
+        flecs::entity_t type_id = _::type<RealType>::id(world_);
+        flecs::entity_t unit_id = _::type<UnitType>::id(world_);
+        size_t offset = reinterpret_cast<size_t>(&(static_cast<ComponentType*>(nullptr)->*ptr));
+        return member(type_id, unit_id, name, std::extent<MemberType>::value, offset);
+             */
+
+    /// Add bitmask constant
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `untyped_component::bit`
+    pub fn bit(&self, name: &str, value: u32) -> &Self {
+        let world = self.world_ptr_mut();
+        let id = *self.id;
+
+        unsafe { sys::ecs_add_id(world, id, flecs::meta::Bitmask::ID) };
+
+        let desc = sys::ecs_entity_desc_t {
+            name: name.as_ptr() as *const i8,
+            parent: id,
+            ..Default::default()
+        };
+
+        let eid = unsafe { sys::ecs_entity_init(world, &desc) };
+
+        ecs_assert!(
+            eid != 0,
+            FlecsErrorCode::InternalError,
+            "failed to create entity"
+        );
+
+        unsafe {
+            sys::ecs_set_id(
+                world,
+                eid,
+                ecs_pair(flecs::meta::Constant::ID, flecs::meta::U32::ID),
+                std::mem::size_of::<u32>(),
+                &value as *const u32 as *const c_void,
+            )
+        };
+        self
+    }
+
+    /// register array metadata for component
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `untyped_component::array`
+    pub fn array<ElemType: ComponentId>(&self, elem_count: i32) -> &Self {
+        let desc = sys::ecs_array_desc_t {
+            entity: *self.id,
+            type_: ElemType::get_id(self.world()),
+            count: elem_count,
+        };
+
+        unsafe { sys::ecs_array_init(self.world_ptr_mut(), &desc) };
+        self
+    }
+
+    /// add member value range
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `untyped_component::range`
+    pub fn range(&self, min: f64, max: f64) -> &Self {
+        let m = unsafe { sys::ecs_cpp_last_member(self.world_ptr(), *self.id) };
+        if m.is_null() {
+            return self;
+        }
+
+        let world_ptr = self.world_ptr_mut();
+        let w = unsafe { WorldRef::from_ptr(world_ptr) };
+        let me = w.entity_from_id(unsafe { (*m).member });
+
+        let mr = unsafe {
+            &mut *(sys::ecs_ensure_id(world_ptr, *me.id, flecs::meta::MemberRanges::ID)
+                as *mut flecs::meta::MemberRanges)
+        };
+
+        mr.value.min = min;
+        mr.value.max = max;
+        me.modified::<flecs::meta::MemberRanges>();
+        self
+    }
+
+    /// add member warning range
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `untyped_component::warning_range`
+    pub fn warning_range(&self, min: f64, max: f64) -> &Self {
+        let m = unsafe { sys::ecs_cpp_last_member(self.world_ptr(), *self.id) };
+        if m.is_null() {
+            return self;
+        }
+
+        let world_ptr = self.world_ptr_mut();
+        let w = unsafe { WorldRef::from_ptr(world_ptr) };
+        let me = w.entity_from_id(unsafe { (*m).member });
+
+        let mr = unsafe {
+            &mut *(sys::ecs_ensure_id(world_ptr, *me.id, flecs::meta::MemberRanges::ID)
+                as *mut flecs::meta::MemberRanges)
+        };
+
+        mr.warning.min = min;
+        mr.warning.max = max;
+        me.modified::<flecs::meta::MemberRanges>();
+        self
+    }
+
+    /// add member error range
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `untyped_component::error_range`
+    pub fn error_range(&self, min: f64, max: f64) -> &Self {
+        let m = unsafe { sys::ecs_cpp_last_member(self.world_ptr(), *self.id) };
+        if m.is_null() {
+            return self;
+        }
+
+        let world_ptr = self.world_ptr_mut();
+        let w = unsafe { WorldRef::from_ptr(world_ptr) };
+        let me = w.entity_from_id(unsafe { (*m).member });
+
+        let mr = unsafe {
+            &mut *(sys::ecs_ensure_id(world_ptr, *me.id, flecs::meta::MemberRanges::ID)
+                as *mut flecs::meta::MemberRanges)
+        };
+
+        mr.error.min = min;
+        mr.error.max = max;
+        me.modified::<flecs::meta::MemberRanges>();
+        self
+    }
 }
 
 #[cfg(test)]
@@ -170,8 +483,8 @@ mod tests {
 
     // pub type SerializeFn<T> = extern "C" fn(*const Serializer, *const T) -> i32;
 
-    extern "C" fn int_serializer(s: *const meta::Serializer, i: *const Int) -> i32 {
-        unsafe { (*s).value::<Int>(&*i) }
+    extern "C" fn int_serializer(s: &meta::Serializer, i: &Int) -> i32 {
+        s.value::<i32>(&i.value)
     }
 
     #[derive(Debug, Clone, Component)]
@@ -180,15 +493,14 @@ mod tests {
     }
 
     #[test]
-
     fn test_opaque() {
         let world = World::new();
-        let opaque = world
+        world
             .component::<Int>()
-            .opaque_id(meta::I32)
+            .opaque::<flecs::meta::I32>()
             .serialize(int_serializer);
 
-        let int_type = Int { value: 42 };
+        let int_type = Int { value: 10 };
 
         let json: *mut i8 = unsafe {
             sys::ecs_ptr_to_json(
@@ -200,5 +512,72 @@ mod tests {
 
         let json_str = unsafe { std::ffi::CStr::from_ptr(json).to_str().unwrap() };
         println!("{}", json_str);
+        assert_eq!("10", json_str);
+    }
+
+    #[derive(Component, Default)]
+    struct Position {
+        x: f32,
+        y: f32,
+    }
+
+    /*
+        flecs::world ecs;
+
+    // Register component with reflection data
+    ecs.component<Position>()
+        .member<float>("x")
+        .member<float>("y");
+
+    // Create entity with Position as usual
+    flecs::entity e = ecs.entity()
+        .set<Position>({10, 20});
+
+    // Convert position component to flecs expression string
+    const Position *ptr = e.get<Position>();
+    std::cout << ecs.to_expr(ptr).c_str() << "\n"; // {x: 10, y: 20}
+     */
+
+    macro_rules! align_of_field {
+        ($Container:ty, $field:ident $(,)?) => {{
+            const OFFSET: usize = ::core::mem::offset_of!($Container, $field);
+            const ALIGN: usize = ::core::mem::align_of::<$Container>();
+            const RELATIVE_ALIGN: usize = if OFFSET == 0 {
+                ALIGN
+            } else {
+                1usize << OFFSET.trailing_zeros()
+            };
+            if ALIGN <= RELATIVE_ALIGN {
+                ALIGN
+            } else {
+                RELATIVE_ALIGN
+            }
+        }};
+    }
+
+    #[test]
+    fn test_expr() {
+        let world = World::new();
+
+        world
+            .component::<Position>()
+            .member_type::<f32>("x", 1, std::mem::offset_of!(Position, x) as i32)
+            .member_type::<f32>("y", 1, std::mem::offset_of!(Position, y) as i32);
+
+        let e = world.entity().set(Position { x: 10.0, y: 20.0 });
+
+        let pos_id = <Position as ComponentId>::id(&world);
+
+        e.get::<&Position>(|pos| {
+            let expr = unsafe {
+                sys::ecs_ptr_to_expr(
+                    world.ptr_mut(),
+                    pos_id,
+                    pos as *const Position as *const c_void,
+                )
+            };
+            let expr = unsafe { std::ffi::CStr::from_ptr(expr).to_str().unwrap() };
+            println!("{}", expr);
+        });
     }
 }

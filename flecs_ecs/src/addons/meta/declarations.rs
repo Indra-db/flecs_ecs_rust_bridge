@@ -1,6 +1,5 @@
 use flecs_ecs_derive::Component;
 
-use crate::core::*;
 use crate::sys;
 
 // Primitive type aliases
@@ -24,43 +23,10 @@ pub type MemberT = sys::ecs_member_t;
 pub type EnumConstantT = sys::ecs_enum_constant_t;
 pub type BitmaskConstantT = sys::ecs_bitmask_constant_t;
 
-// Components
-pub type Type = sys::EcsType;
-pub type TypeSerializer = sys::EcsTypeSerializer;
-pub type Primitive = sys::EcsPrimitive;
-pub type Enum = sys::EcsEnum;
-pub type Bitmask = sys::EcsBitmask;
-pub type Member = sys::EcsMember;
-pub type MemberRanges = sys::EcsMemberRanges;
-pub type Struct = sys::EcsStruct;
-pub type Array = sys::EcsArray;
-pub type Vector = sys::EcsVector;
-pub type Unit = sys::EcsUnit;
-
 // Base type for bitmasks
 pub struct EcsBitmask {
     value: u32,
 }
-
-pub const BOOL: EntityT = ECS_BOOL_T;
-pub const CHAR: EntityT = ECS_CHAR_T;
-pub const BYTE: EntityT = ECS_BYTE_T;
-pub const U8: EntityT = ECS_U8_T;
-pub const U16: EntityT = ECS_U16_T;
-pub const U32: EntityT = ECS_U32_T;
-pub const U64: EntityT = ECS_U64_T;
-pub const U_PTR: EntityT = ECS_UPTR_T;
-pub const I8: EntityT = ECS_I8_T;
-pub const I16: EntityT = ECS_I16_T;
-pub const I32: EntityT = ECS_I32_T;
-pub const I64: EntityT = ECS_I64_T;
-pub const I_PTR: EntityT = ECS_IPTR_T;
-pub const F32: EntityT = ECS_F32_T;
-pub const F64: EntityT = ECS_F64_T;
-pub const STRING: EntityT = ECS_STRING_T;
-pub const ENTITY: EntityT = ECS_ENTITY_T;
-pub const CONSTANT: EntityT = ECS_CONSTANT;
-pub const QUANTITY: EntityT = ECS_QUANTITY;
 
 #[allow(clippy::unnecessary_cast)]
 #[repr(u32)]

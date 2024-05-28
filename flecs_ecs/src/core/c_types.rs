@@ -484,7 +484,7 @@ pub(crate) const ECS_ID_T: u64 = FLECS_HI_COMPONENT_ID + 97;
 
 // Meta module component ids
 pub(crate) const ECS_META_TYPE: u64 = FLECS_HI_COMPONENT_ID + 98;
-pub(crate) const ECS_META_TYPE_SERIALIZED: u64 = FLECS_HI_COMPONENT_ID + 99;
+pub(crate) const ECS_META_TYPE_SERIALIZER: u64 = FLECS_HI_COMPONENT_ID + 99;
 pub(crate) const ECS_PRIMITIVE: u64 = FLECS_HI_COMPONENT_ID + 100;
 pub(crate) const ECS_ENUM: u64 = FLECS_HI_COMPONENT_ID + 101;
 pub(crate) const ECS_BITMASK: u64 = FLECS_HI_COMPONENT_ID + 102;

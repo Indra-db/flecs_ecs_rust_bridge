@@ -39,6 +39,7 @@ impl<'a> IntoWorld<'a> for &'a World {
     }
 }
 
+#[repr(C)]
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct WorldRef<'a> {
     raw_world: NonNull<WorldT>,
