@@ -12,7 +12,6 @@ use crate::addons::system::{System, SystemBuilder};
 #[cfg(feature = "flecs_pipeline")]
 use crate::addons::pipeline::PipelineBuilder;
 
-use crate::addons::meta;
 use crate::core::*;
 use crate::sys;
 

@@ -1,68 +1,15 @@
-use std::ffi::c_char;
 use std::ffi::c_void;
 
 use crate::core::*;
 use crate::sys::*;
+
+use super::meta_functions::*;
 
 /// Serializer object, used for serializing opaque types
 pub type Serializer = ecs_serializer_t;
 
 /// Serializer function, used to serialize opaque types
 pub type SerializeT = ecs_meta_serialize_t;
-
-/// Type safe variant of serializer function
-pub type SerializeFn<T> = extern "C" fn(&Serializer, &T) -> i32;
-
-pub type AssignBoolFn<T> = extern "C" fn(&mut T, bool);
-pub type AssignCharFn<T> = extern "C" fn(&mut T, i8);
-pub type AssignIntFn<T> = extern "C" fn(&mut T, i64);
-pub type AssignUIntFn<T> = extern "C" fn(&mut T, u64);
-pub type AssignFloatFn<T> = extern "C" fn(&mut T, f32);
-// TODO: Replace with idiomatic Rust equivalent of c_char. Might need changes to flecs.
-pub type AssignStringFn<T> = extern "C" fn(&mut T, *const c_char);
-pub type AssignEntityFn<T> = extern "C" fn(&mut T, WorldRef, Entity);
-pub type AssignNullFn<T> = extern "C" fn(&mut T);
-pub type ClearFn<T> = extern "C" fn(&mut T);
-// TODO: Implement the ensure_element function for collections.
-pub type EnsureMemberFn<T, ElemType> = extern "C" fn(&mut T, *const c_char) -> &mut ElemType;
-pub type CountFn<T> = extern "C" fn(&mut T) -> usize;
-pub type ResizeFn<T> = extern "C" fn(&mut T, usize);
-
-pub(crate) struct OpaqueFnPtrs<T: ComponentId, ElemType> {
-    pub(crate) serialize: Option<fn(&Serializer, &T) -> i32>,
-    pub(crate) assign_bool: Option<fn(&mut T, bool)>,
-    pub(crate) assign_char: Option<fn(&mut T, i8)>,
-    pub(crate) assign_int: Option<fn(&mut T, i64)>,
-    pub(crate) assign_uint: Option<fn(&mut T, u64)>,
-    pub(crate) assign_float: Option<fn(&mut T, f32)>,
-    pub(crate) assign_string: Option<fn(&mut T, *const c_char)>,
-    pub(crate) assign_entity: Option<fn(&mut T, &mut WorldRef, Entity)>,
-    pub(crate) assign_null: Option<fn(&mut T)>,
-    pub(crate) clear: Option<fn(&mut T)>,
-    pub(crate) ensure_member: Option<fn(&mut T, *const c_char) -> &mut ElemType>,
-    pub(crate) count: Option<fn(&mut T) -> usize>,
-    pub(crate) resize: Option<fn(&mut T, usize)>,
-}
-
-impl<T: ComponentId, ElemType> Default for OpaqueFnPtrs<T, ElemType> {
-    fn default() -> Self {
-        Self {
-            serialize: None,
-            assign_bool: None,
-            assign_char: None,
-            assign_int: None,
-            assign_uint: None,
-            assign_float: None,
-            assign_string: None,
-            assign_entity: None,
-            assign_null: None,
-            clear: None,
-            ensure_member: None,
-            count: None,
-            resize: None,
-        }
-    }
-}
 
 /// Type safe interface for opaque types
 pub struct Opaque<'a, T, ElemType = c_void>
@@ -101,7 +48,8 @@ where
     }
 
     /// Serialize function
-    pub fn serialize(&mut self, func: SerializeFn<T>) -> &mut Self {
+    /// Fn(&Serializer, &T) -> i32
+    pub fn serialize(&mut self, func: impl SerializeFn<T>) -> &mut Self {
         self.desc.type_.serialize = Some(unsafe {
             std::mem::transmute::<
                 extern "C" fn(&flecs_ecs_sys::ecs_serializer_t, &T) -> i32,
@@ -109,152 +57,137 @@ where
                     *const flecs_ecs_sys::ecs_serializer_t,
                     *const std::ffi::c_void,
                 ) -> i32,
-            >(func)
+            >(func.to_extern_fn())
         });
         self
     }
 
-    // pub fn serialize2(&mut self, func: fn(&Serializer, &T) -> i32) -> &mut Self {
-    //     self.desc.type_.serialize = Some(Self::serializer_dummy::<T>);
-    //     self.opaque_fn_ptrs.serialize = Some(func);
-    //     self
-    // }
-
-    // extern "C" fn serializer_dummy<Q: ComponentId>(
-    //     serializer: *const ecs_serializer_t,
-    //     value: *const c_void,
-    // ) -> i32 {
-    //     let func = unsafe { (*serializer).ctx as *mut OpaqueFnPtrs<Q, c_void> };
-    //     let func = unsafe { (*func).serialize.unwrap() };
-    //     unsafe { func(&*serializer, &*(value as *const Q)) }
-    // }
-
     /// Assign bool value
-    pub fn assign_bool(&mut self, func: AssignBoolFn<T>) -> &mut Self {
+    pub fn assign_bool(&mut self, func: impl AssignBoolFn<T>) -> &mut Self {
         self.desc.type_.assign_bool = Some(unsafe {
             std::mem::transmute::<
                 extern "C" fn(&mut T, bool),
                 unsafe extern "C" fn(*mut std::ffi::c_void, bool),
-            >(func)
+            >(func.to_extern_fn())
         });
         self
     }
 
     /// Assign char value
-    pub fn assign_char(&mut self, func: AssignCharFn<T>) -> &mut Self {
+    pub fn assign_char(&mut self, func: impl AssignCharFn<T>) -> &mut Self {
         self.desc.type_.assign_char = Some(unsafe {
             std::mem::transmute::<
                 extern "C" fn(&mut T, i8),
                 unsafe extern "C" fn(*mut std::ffi::c_void, i8),
-            >(func)
+            >(func.to_extern_fn())
         });
         self
     }
 
     /// Assign int value
-    pub fn assign_int(&mut self, func: AssignIntFn<T>) -> &mut Self {
+    pub fn assign_int(&mut self, func: impl AssignIntFn<T>) -> &mut Self {
         self.desc.type_.assign_int = Some(unsafe {
             std::mem::transmute::<
                 extern "C" fn(&mut T, i64),
                 unsafe extern "C" fn(*mut std::ffi::c_void, i64),
-            >(func)
+            >(func.to_extern_fn())
         });
         self
     }
 
     /// Assign unsigned int value
-    pub fn assign_uint(&mut self, func: AssignUIntFn<T>) -> &mut Self {
+    pub fn assign_uint(&mut self, func: impl AssignUIntFn<T>) -> &mut Self {
         self.desc.type_.assign_uint = Some(unsafe {
             std::mem::transmute::<
                 extern "C" fn(&mut T, u64),
                 unsafe extern "C" fn(*mut std::ffi::c_void, u64),
-            >(func)
+            >(func.to_extern_fn())
         });
         self
     }
 
     /// Assign float value
-    pub fn assign_float(&mut self, func: AssignFloatFn<T>) -> &mut Self {
+    pub fn assign_float(&mut self, func: impl AssignFloatFn<T>) -> &mut Self {
         self.desc.type_.assign_float = Some(unsafe {
             std::mem::transmute::<
                 extern "C" fn(&mut T, f32),
                 unsafe extern "C" fn(*mut std::ffi::c_void, f64),
-            >(func)
+            >(func.to_extern_fn())
         });
         self
     }
 
     /// Assign string value
-    pub fn assign_string(&mut self, func: AssignStringFn<T>) -> &mut Self {
+    pub fn assign_string(&mut self, func: impl AssignStringFn<T>) -> &mut Self {
         self.desc.type_.assign_string = Some(unsafe {
             std::mem::transmute::<
                 extern "C" fn(&mut T, *const i8),
                 unsafe extern "C" fn(*mut std::ffi::c_void, *const i8),
-            >(func)
+            >(func.to_extern_fn())
         });
         self
     }
 
     /// Assign entity value
-    pub fn assign_entity(&mut self, func: AssignEntityFn<T>) -> &mut Self {
+    pub fn assign_entity(&mut self, func: impl AssignEntityFn<T>) -> &mut Self {
         self.desc.type_.assign_entity = Some(unsafe {
             std::mem::transmute::<
                 extern "C" fn(&mut T, WorldRef, Entity),
                 unsafe extern "C" fn(*mut std::ffi::c_void, *mut flecs_ecs_sys::ecs_world_t, u64),
-            >(func)
+            >(func.to_extern_fn())
         });
         self
     }
 
     /// Assign null value
-    pub fn assign_null(&mut self, func: AssignNullFn<T>) -> &mut Self {
+    pub fn assign_null(&mut self, func: impl AssignNullFn<T>) -> &mut Self {
         self.desc.type_.assign_null = Some(unsafe {
             std::mem::transmute::<extern "C" fn(&mut T), unsafe extern "C" fn(*mut std::ffi::c_void)>(
-                func,
+                func.to_extern_fn(),
             )
         });
         self
     }
 
     /// Clear collection elements
-    pub fn clear(&mut self, func: ClearFn<T>) -> &mut Self {
+    pub fn clear(&mut self, func: impl ClearFn<T>) -> &mut Self {
         self.desc.type_.clear = Some(unsafe {
             std::mem::transmute::<extern "C" fn(&mut T), unsafe extern "C" fn(*mut std::ffi::c_void)>(
-                func,
+                func.to_extern_fn(),
             )
         });
         self
     }
 
     /// Ensure & get element
-    pub fn ensure_member(&mut self, func: EnsureMemberFn<T, ElemType>) -> &mut Self {
+    pub fn ensure_member(&mut self, func: impl EnsureMemberFn<T, ElemType>) -> &mut Self {
         self.desc.type_.ensure_member = Some(unsafe {
             std::mem::transmute::<
                 extern "C" fn(&mut T, *const i8) -> &mut ElemType,
                 unsafe extern "C" fn(*mut std::ffi::c_void, *const i8) -> *mut std::ffi::c_void,
-            >(func)
+            >(func.to_extern_fn())
         });
         self
     }
 
     /// Return number of elements
-    pub fn count(&mut self, func: CountFn<T>) -> &mut Self {
+    pub fn count(&mut self, func: impl CountFn<T>) -> &mut Self {
         self.desc.type_.count = Some(unsafe {
             std::mem::transmute::<
                 extern "C" fn(&mut T) -> usize,
                 unsafe extern "C" fn(*const std::ffi::c_void) -> usize,
-            >(func)
+            >(func.to_extern_fn())
         });
         self
     }
 
     /// Resize to number of elements
-    pub fn resize(&mut self, func: ResizeFn<T>) -> &mut Self {
+    pub fn resize(&mut self, func: impl ResizeFn<T>) -> &mut Self {
         self.desc.type_.resize = Some(unsafe {
             std::mem::transmute::<
                 extern "C" fn(&mut T, usize),
                 unsafe extern "C" fn(*mut std::ffi::c_void, usize),
-            >(func)
+            >(func.to_extern_fn())
         });
         self
     }

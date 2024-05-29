@@ -3,6 +3,7 @@ mod cursor;
 mod declarations;
 mod impl_bindings;
 mod impl_primitives;
+mod meta_functions;
 mod opaque;
 
 use std::ffi::c_void;
@@ -483,10 +484,6 @@ mod tests {
 
     // pub type SerializeFn<T> = extern "C" fn(*const Serializer, *const T) -> i32;
 
-    extern "C" fn int_serializer(s: &meta::Serializer, i: &Int) -> i32 {
-        s.value::<i32>(&i.value)
-    }
-
     #[derive(Debug, Clone, Component)]
     struct Int {
         value: i32,
@@ -498,7 +495,7 @@ mod tests {
         world
             .component::<Int>()
             .opaque::<flecs::meta::I32>()
-            .serialize(int_serializer);
+            .serialize(|s: &meta::Serializer, i: &Int| s.value::<i32>(&i.value));
 
         let int_type = Int { value: 10 };
 
@@ -519,40 +516,6 @@ mod tests {
     struct Position {
         x: f32,
         y: f32,
-    }
-
-    /*
-        flecs::world ecs;
-
-    // Register component with reflection data
-    ecs.component<Position>()
-        .member<float>("x")
-        .member<float>("y");
-
-    // Create entity with Position as usual
-    flecs::entity e = ecs.entity()
-        .set<Position>({10, 20});
-
-    // Convert position component to flecs expression string
-    const Position *ptr = e.get<Position>();
-    std::cout << ecs.to_expr(ptr).c_str() << "\n"; // {x: 10, y: 20}
-     */
-
-    macro_rules! align_of_field {
-        ($Container:ty, $field:ident $(,)?) => {{
-            const OFFSET: usize = ::core::mem::offset_of!($Container, $field);
-            const ALIGN: usize = ::core::mem::align_of::<$Container>();
-            const RELATIVE_ALIGN: usize = if OFFSET == 0 {
-                ALIGN
-            } else {
-                1usize << OFFSET.trailing_zeros()
-            };
-            if ALIGN <= RELATIVE_ALIGN {
-                ALIGN
-            } else {
-                RELATIVE_ALIGN
-            }
-        }};
     }
 
     #[test]

@@ -2,8 +2,7 @@
 use crate::ecs_app_desc_t;
 use crate::{
     ecs_entity_desc_t, ecs_event_desc_t, ecs_header_t, ecs_observer_desc_t, ecs_query_desc_t,
-    ecs_serializer_t, ecs_term_ref_t, ecs_term_t, ecs_type_hooks_t, ecs_type_t, EcsComponent,
-    EcsOpaque, EcsPoly,
+    ecs_term_ref_t, ecs_term_t, ecs_type_hooks_t, ecs_type_t, EcsComponent, EcsOpaque, EcsPoly,
 };
 
 #[cfg(feature = "flecs_system")]
