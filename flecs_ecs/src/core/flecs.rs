@@ -154,7 +154,7 @@ create_pre_registered_component!(EcsWorld, ECS_WORLD);
 create_pre_registered_component!(Flecs, ECS_FLECS);
 create_pre_registered_component!(FlecsCore, ECS_FLECS_CORE);
 create_pre_registered_component!(FlecsInternals, ECS_FLECS_INTERNALS);
-create_pre_registered_component!(EcsModule, ECS_MODULE);
+create_pre_registered_component!(Module, ECS_MODULE);
 create_pre_registered_component!(Private, ECS_PRIVATE);
 create_pre_registered_component!(Prefab, ECS_PREFAB);
 create_pre_registered_component!(Disabled, ECS_DISABLED);

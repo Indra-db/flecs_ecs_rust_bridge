@@ -1,5 +1,3 @@
-use std::ffi::c_void;
-
 use crate::core::*;
 use crate::sys::*;
 
@@ -12,13 +10,12 @@ pub type Serializer = ecs_serializer_t;
 pub type SerializeT = ecs_meta_serialize_t;
 
 /// Type safe interface for opaque types
-pub struct Opaque<'a, T, ElemType = c_void>
+pub struct Opaque<'a, T, ElemType = ()>
 where
     T: ComponentId,
 {
     world: WorldRef<'a>,
     pub desc: ecs_opaque_desc_t,
-    //opaque_fn_ptrs: Box<OpaqueFnPtrs<T, ElemType>>,
     phantom: std::marker::PhantomData<T>,
     phantom2: std::marker::PhantomData<ElemType>,
 }
@@ -129,10 +126,10 @@ where
     }
 
     /// Assign entity value
-    pub fn assign_entity(&mut self, func: impl AssignEntityFn<T>) -> &mut Self {
+    pub fn assign_entity(&mut self, func: impl AssignEntityFn<'a, T>) -> &mut Self {
         self.desc.type_.assign_entity = Some(unsafe {
             std::mem::transmute::<
-                extern "C" fn(&mut T, WorldRef, Entity),
+                extern "C" fn(&'a mut T, WorldRef<'a>, Entity),
                 unsafe extern "C" fn(*mut std::ffi::c_void, *mut flecs_ecs_sys::ecs_world_t, u64),
             >(func.to_extern_fn())
         });

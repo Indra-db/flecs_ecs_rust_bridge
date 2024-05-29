@@ -177,28 +177,28 @@ where
     }
 }
 
-pub trait AssignEntityFn<T> {
-    fn to_extern_fn(self) -> extern "C" fn(&mut T, WorldRef, Entity);
+pub trait AssignEntityFn<'a, T> {
+    fn to_extern_fn(self) -> extern "C" fn(&'a mut T, WorldRef<'a>, Entity);
 }
 
-impl<F, T> AssignEntityFn<T> for F
+impl<'a, F, T> AssignEntityFn<'a, T> for F
 where
-    F: Fn(&mut T, WorldRef, Entity),
+    F: Fn(&mut T, WorldRef<'a>, Entity),
 {
-    fn to_extern_fn(self) -> extern "C" fn(&mut T, WorldRef, Entity) {
+    fn to_extern_fn(self) -> extern "C" fn(&'a mut T, WorldRef<'a>, Entity) {
         // const {
         assert!(std::mem::size_of::<Self>() == 0);
         // }
         std::mem::forget(self);
 
-        extern "C" fn output<F, T>(value: &mut T, world: WorldRef, entity: Entity)
+        extern "C" fn output<'a, F, T>(value: &'a mut T, world: WorldRef<'a>, entity: Entity)
         where
-            F: Fn(&mut T, WorldRef, Entity),
+            F: Fn(&'a mut T, WorldRef<'a>, Entity),
         {
             (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, world, entity)
         }
 
-        output::<F, T>
+        output::<'a, F, T>
     }
 }
 

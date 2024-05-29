@@ -18,17 +18,29 @@ use crate::sys;
 
 impl World {
     /// Return meta cursor to value
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `world::cursor`
     pub fn cursor_id(&self, type_id: impl Into<Entity>, ptr: *mut c_void) -> Cursor {
         Cursor::new(self, type_id, ptr)
     }
 
     /// Return meta cursor to value
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `world::cursor`
     pub fn cursor<T: ComponentId>(&self, ptr: *mut c_void) -> Cursor {
         let type_id = T::get_id(self.world());
         Cursor::new(self, type_id, ptr)
     }
 
     /// Create primitive type
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `world::primitive`
     pub fn primitive(&self, kind: EcsPrimitiveKind) -> EntityView {
         let desc = sys::ecs_primitive_desc_t {
             kind: kind as u32,
@@ -45,6 +57,10 @@ impl World {
     }
 
     /// Create array type
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `world::array`
     pub fn array_id(&self, elem_id: impl Into<Entity>, array_count: i32) -> EntityView {
         let desc = sys::ecs_array_desc_t {
             type_: *elem_id.into(),
@@ -62,11 +78,19 @@ impl World {
     }
 
     /// Create array type
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `world::array`
     pub fn array<T: ComponentId>(&self, array_count: i32) -> EntityView {
         self.array_id(T::get_id(self.world()), array_count)
     }
 
     /// Create vector type
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `world::vector`
     pub fn vector_id(&self, elem_id: impl Into<Entity>) -> EntityView {
         let desc = sys::ecs_vector_desc_t {
             entity: 0u64,
@@ -82,6 +106,15 @@ impl World {
         );
 
         EntityView::new_from(self, eid)
+    }
+
+    /// Create vector type
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `world::vector`
+    pub fn vector<T: ComponentId>(&self) -> EntityView {
+        self.vector_id(T::get_id(self.world()))
     }
 }
 
@@ -476,10 +509,24 @@ impl<'a> UntypedComponent<'a> {
     }
 }
 
+pub fn flecs_entity_support<'a, EntityType: ComponentId + IntoId + IdOperations<'a>>(
+    world: impl IntoWorld<'a>,
+) -> Opaque<'a, EntityType> {
+    let mut opaque = Opaque::<EntityType>::new(world);
+    opaque.as_type(flecs::meta::Entity::ID);
+    opaque.serialize(|ser: &Serializer, data: &EntityType| {
+        let id: Id = <EntityType as Into<Id>>::into(*data);
+        let id: u64 = *id;
+        ser.value_id(flecs::meta::Entity::ID, &id as *const u64 as *const c_void)
+    });
+    opaque.assign_entity(|dst: &mut EntityType, world: WorldRef<'a>, e: Entity| {
+        *dst = EntityType::new_from(world, e);
+    });
+    opaque
+}
+
 #[cfg(test)]
 mod tests {
-    use experimental::flecs_script::Script;
-
     use crate::prelude::*;
 
     use super::*;

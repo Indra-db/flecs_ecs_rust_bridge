@@ -1,5 +1,3 @@
-//! Modules organize components, systems and more in reusable units of code.
-
 use crate::core::{flecs, ComponentId, EntityView, World};
 
 pub trait Module: ComponentId {
@@ -8,20 +6,20 @@ pub trait Module: ComponentId {
 
 impl World {
     pub fn import<T: Module>(&self) -> EntityView {
-        let module = self.component::<T>();
         // If we have already registered this type don't re-create the module
-        if module.has::<flecs::EcsModule>() {
-            return module.entity;
+        if T::is_registered_with_world(self) {
+            return self.component::<T>().entity;
         }
 
         // Reset scope
         let prev_scope = self.set_scope_id(0);
 
-        // Initialise component for the module and add Module tag
-        module.add::<flecs::EcsModule>();
-
         // Set scope to our module
-        self.set_scope_id(module.entity);
+        self.set_scope::<T>();
+
+        // Initialise component for the module and add Module tag
+        let module = self.component::<T>();
+        module.add::<flecs::Module>();
 
         // Build the module
         T::module(self);

@@ -19,9 +19,9 @@ pub type F32T = sys::ecs_f32_t;
 pub type F64T = sys::ecs_f64_t;
 
 // Embedded type aliases
-pub type MemberT = sys::ecs_member_t;
-pub type EnumConstantT = sys::ecs_enum_constant_t;
-pub type BitmaskConstantT = sys::ecs_bitmask_constant_t;
+pub type EcsMember = sys::ecs_member_t;
+pub type EcsEnumConstant = sys::ecs_enum_constant_t;
+pub type EcsBitmaskConstant = sys::ecs_bitmask_constant_t;
 
 // Base type for bitmasks
 pub struct EcsBitmask {

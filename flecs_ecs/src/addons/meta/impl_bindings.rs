@@ -4,9 +4,9 @@ use flecs_ecs::addons::meta::declarations::*;
 
 use super::Opaque;
 
-flecs_ecs::impl_component_traits_binding_type!(MemberT);
-flecs_ecs::impl_component_traits_binding_type!(EnumConstantT);
-flecs_ecs::impl_component_traits_binding_type!(BitmaskConstantT);
+flecs_ecs::impl_component_traits_binding_type!(EcsMember);
+flecs_ecs::impl_component_traits_binding_type!(EcsEnumConstant);
+flecs_ecs::impl_component_traits_binding_type!(EcsBitmaskConstant);
 
 impl<T: ComponentId> FlecsConstantId for Opaque<'static, T> {
     const ID: u64 = ECS_OPAQUE;
