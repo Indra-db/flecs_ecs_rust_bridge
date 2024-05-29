@@ -478,6 +478,8 @@ impl<'a> UntypedComponent<'a> {
 
 #[cfg(test)]
 mod tests {
+    use experimental::flecs_script::Script;
+
     use crate::prelude::*;
 
     use super::*;
@@ -532,14 +534,7 @@ mod tests {
         let pos_id = <Position as ComponentId>::id(&world);
 
         e.get::<&Position>(|pos| {
-            let expr = unsafe {
-                sys::ecs_ptr_to_expr(
-                    world.ptr_mut(),
-                    pos_id,
-                    pos as *const Position as *const c_void,
-                )
-            };
-            let expr = unsafe { std::ffi::CStr::from_ptr(expr).to_str().unwrap() };
+            let expr = world.to_expr(pos);
             println!("{}", expr);
         });
     }
