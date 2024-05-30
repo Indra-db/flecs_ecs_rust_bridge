@@ -509,18 +509,16 @@ impl<'a> UntypedComponent<'a> {
     }
 }
 
-pub fn flecs_entity_support<'a, EntityType: ComponentId + IntoId + IdOperations<'a>>(
-    world: impl IntoWorld<'a>,
-) -> Opaque<'a, EntityType> {
-    let mut opaque = Opaque::<EntityType>::new(world);
+pub fn flecs_entity_support<'a>(world: impl IntoWorld<'a>) -> Opaque<'a, Entity> {
+    let mut opaque = Opaque::<Entity>::new(world);
     opaque.as_type(flecs::meta::Entity::ID);
-    opaque.serialize(|ser: &Serializer, data: &EntityType| {
-        let id: Id = <EntityType as Into<Id>>::into(*data);
+    opaque.serialize(|ser: &Serializer, data: &Entity| {
+        let id: Id = <Entity as Into<Id>>::into(*data);
         let id: u64 = *id;
         ser.value_id(flecs::meta::Entity::ID, &id as *const u64 as *const c_void)
     });
-    opaque.assign_entity(|dst: &mut EntityType, world: WorldRef<'a>, e: Entity| {
-        *dst = EntityType::new_from(world, e);
+    opaque.assign_entity(|dst: &mut Entity, _world: WorldRef<'a>, e: Entity| {
+        *dst = e;
     });
     opaque
 }

@@ -94,24 +94,10 @@ impl World {
 
             let entity = self.entity_named("::flecs::rust").add::<flecs::Module>();
 
-            // entity.scope(|world| {
-            //     let comp = world.component::<EntityView>();
-            //     comp.opaque_func(crate::prelude::meta::flecs_entity_support::<EntityView>);
-            // });
-
-            // world
-            //     .component::<flecs::entity>()
-            //     .opaque(flecs_entity_support::<flecs::entity>);
-            /*
-
-            // Register opaque type support for C++ entity wrappers
-            world.entity("::flecs::cpp").add(flecs::Module).scope([&]{
-                world.component<flecs::entity_view>()
-                    .opaque(flecs_entity_support<flecs::entity_view>);
-                world.component<flecs::entity>()
-                    .opaque(flecs_entity_support<flecs::entity>);
+            entity.scope(|world| {
+                let comp = world.component::<Entity>();
+                comp.opaque_func(crate::prelude::meta::flecs_entity_support);
             });
-                     */
         }
     }
 
