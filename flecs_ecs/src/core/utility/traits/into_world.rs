@@ -43,8 +43,6 @@ impl<'a> IntoWorld<'a> for &'a World {
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct WorldRef<'a> {
     raw_world: NonNull<WorldT>,
-    components: NonNull<FlecsIdMap>,
-    pub(crate) components_array: NonNull<FlecsArray>,
     _marker: PhantomData<&'a ()>,
 }
 
@@ -66,8 +64,6 @@ impl<'a> WorldRef<'a> {
     pub unsafe fn from_ptr(raw_world: *mut WorldT) -> Self {
         WorldRef {
             raw_world: NonNull::new_unchecked(raw_world),
-            components: NonNull::new_unchecked(World::get_components_map_ptr(raw_world)),
-            components_array: NonNull::new_unchecked(World::get_components_array_ptr(raw_world)),
             _marker: PhantomData,
         }
     }
@@ -78,10 +74,25 @@ impl<'a> From<&'a World> for WorldRef<'a> {
     fn from(world: &'a World) -> Self {
         WorldRef {
             raw_world: world.raw_world,
-            components: world.components,
-            components_array: world.components_array,
             _marker: PhantomData,
         }
+    }
+}
+
+impl<'a> From<&'a mut World> for WorldRef<'a> {
+    #[inline(always)]
+    fn from(world: &'a mut World) -> Self {
+        WorldRef {
+            raw_world: world.raw_world,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<'a> From<&'a *mut WorldT> for &WorldRef<'a> {
+    #[inline(always)]
+    fn from(value: &'a *mut WorldT) -> Self {
+        unsafe { std::mem::transmute::<&'a *mut WorldT, &WorldRef>(value) }
     }
 }
 

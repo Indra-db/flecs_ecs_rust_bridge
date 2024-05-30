@@ -3,7 +3,7 @@ use std::ops::Deref;
 use crate::core::*;
 
 /// Untyped component class.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct UntypedComponent<'a> {
     pub entity: EntityView<'a>,
 }

@@ -7,6 +7,7 @@ use crate::sys;
 
 /// Component class.
 /// Class used to register components and component metadata.
+#[derive(Debug)]
 pub struct Component<'a, T: ComponentId> {
     pub base: UntypedComponent<'a>,
     _marker: PhantomData<T>,

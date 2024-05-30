@@ -14,7 +14,6 @@ use crate::addons::pipeline::PipelineBuilder;
 
 use crate::core::*;
 
-use crate::prelude::meta::Opaque;
 use crate::sys;
 
 #[derive(Debug, Eq, PartialEq)]

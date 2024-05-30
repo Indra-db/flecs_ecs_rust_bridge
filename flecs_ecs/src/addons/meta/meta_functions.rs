@@ -1,3 +1,5 @@
+use std::ffi::c_void;
+
 use crate::core::{Entity, WorldRef};
 
 use super::Serializer;
@@ -252,28 +254,53 @@ where
     }
 }
 
-pub trait EnsureMemberFn<T, ELemType> {
-    fn to_extern_fn(self) -> extern "C" fn(&mut T, *const i8) -> &mut ELemType;
+pub trait EnsureElementFn<T, ELemType> {
+    fn to_extern_fn(self) -> extern "C" fn(&mut T, usize) -> &mut ELemType;
 }
 
-impl<F, T, ElemType> EnsureMemberFn<T, ElemType> for F
+impl<F, T, ElemType> EnsureElementFn<T, ElemType> for F
 where
-    F: Fn(&mut T, *const i8) -> &mut ElemType,
+    F: Fn(&mut T, usize) -> &mut ElemType,
 {
-    fn to_extern_fn(self) -> extern "C" fn(&mut T, *const i8) -> &mut ElemType {
+    fn to_extern_fn(self) -> extern "C" fn(&mut T, usize) -> &mut ElemType {
         // const {
         assert!(std::mem::size_of::<Self>() == 0);
         // }
         std::mem::forget(self);
 
-        extern "C" fn output<F, T, ElemType>(value: &mut T, data: *const i8) -> &mut ElemType
+        extern "C" fn output<F, T, ElemType>(value: &mut T, elem: usize) -> &mut ElemType
         where
-            F: Fn(&mut T, *const i8) -> &mut ElemType,
+            F: Fn(&mut T, usize) -> &mut ElemType,
+        {
+            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, elem)
+        }
+
+        output::<F, T, ElemType>
+    }
+}
+
+pub trait EnsureMemberFn<T> {
+    fn to_extern_fn(self) -> extern "C" fn(&mut T, *const i8) -> *mut c_void;
+}
+
+impl<F, T> EnsureMemberFn<T> for F
+where
+    F: Fn(&mut T, *const i8) -> *mut c_void,
+{
+    fn to_extern_fn(self) -> extern "C" fn(&mut T, *const i8) -> *mut c_void {
+        // const {
+        assert!(std::mem::size_of::<Self>() == 0);
+        // }
+        std::mem::forget(self);
+
+        extern "C" fn output<F, T>(value: &mut T, data: *const i8) -> *mut c_void
+        where
+            F: Fn(&mut T, *const i8) -> *mut c_void,
         {
             (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data)
         }
 
-        output::<F, T, ElemType>
+        output::<F, T>
     }
 }
 

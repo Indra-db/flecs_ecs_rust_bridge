@@ -14,3 +14,4 @@
 // mod query_builder_test;
 // mod query_test;
 // mod world_test;
+mod meta_test;

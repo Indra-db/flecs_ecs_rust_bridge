@@ -33,6 +33,20 @@ macro_rules! create_pre_registered_component {
             }
         }
 
+        impl PartialEq<u64> for $struct_name {
+            #[inline]
+            fn eq(&self, other: &u64) -> bool {
+                Self::ID == *other
+            }
+        }
+
+        impl PartialEq<$struct_name> for u64 {
+            #[inline]
+            fn eq(&self, _other: &$struct_name) -> bool {
+                *self == $struct_name::ID
+            }
+        }
+
         impl ComponentInfo for $struct_name {
             const IS_GENERIC: bool = false;
             const IS_ENUM: bool = false;

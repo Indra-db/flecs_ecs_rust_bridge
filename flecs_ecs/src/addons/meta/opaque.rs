@@ -157,10 +157,21 @@ where
     }
 
     /// Ensure & get element
-    pub fn ensure_member(&mut self, func: impl EnsureMemberFn<T, ElemType>) -> &mut Self {
+    pub fn ensure_element(&mut self, func: impl EnsureElementFn<T, ElemType>) -> &mut Self {
+        self.desc.type_.ensure_element = Some(unsafe {
+            std::mem::transmute::<
+                extern "C" fn(&mut T, usize) -> &mut ElemType,
+                unsafe extern "C" fn(*mut std::ffi::c_void, usize) -> *mut std::ffi::c_void,
+            >(func.to_extern_fn())
+        });
+        self
+    }
+
+    /// Ensure & get element
+    pub fn ensure_member(&mut self, func: impl EnsureMemberFn<T>) -> &mut Self {
         self.desc.type_.ensure_member = Some(unsafe {
             std::mem::transmute::<
-                extern "C" fn(&mut T, *const i8) -> &mut ElemType,
+                extern "C" fn(&mut T, *const i8) -> *mut std::ffi::c_void,
                 unsafe extern "C" fn(*mut std::ffi::c_void, *const i8) -> *mut std::ffi::c_void,
             >(func.to_extern_fn())
         });
