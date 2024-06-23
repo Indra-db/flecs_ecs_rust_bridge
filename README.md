@@ -22,9 +22,9 @@ For detailed feature progress, please visit the [issues](https://github.com/Indr
 
 
 - [x] Core library ![](https://geps.dev/progress/100?dangerColor=800000&warningColor=ff9900&successColor=006600)
-- [ ] Addons ![](https://geps.dev/progress/45?dangerColor=800000&warningColor=ff9900&successColor=006600) (most important ones are done!) + Rules
-- [ ] Documentation ![](https://geps.dev/progress/70?dangerColor=800000&warningColor=ff9900&successColor=006600) codebase documented with C++ alias. missing 30% is adding Rust syntax to Flecs docs site.
-- [ ] Test suite ![](https://geps.dev/progress/30?dangerColor=800000&warningColor=ff9900&successColor=006600) (entity operations + query operations are fully tested)
+- [ ] Addons ![](https://geps.dev/progress/65?dangerColor=800000&warningColor=ff9900&successColor=006600) Meta + Json are incomplete / in exprimental phase, not meant to be used by public
+- [ ] Documentation ![](https://geps.dev/progress/65?dangerColor=800000&warningColor=ff9900&successColor=006600) codebase documented with C++ alias + description of every function. missing % is adding rust code to Flecs docs + doc tests for examples
+- [ ] Test suite ![](https://geps.dev/progress/55?dangerColor=800000&warningColor=ff9900&successColor=006600) (entity, query, observers fully tested), system partially. Still many tests left to do
 - [ ] Examples ![](https://geps.dev/progress/70?dangerColor=800000&warningColor=ff9900&successColor=006600)[Click me for more info](https://github.com/Indra-db/flecs-ecs-rs/issues/12) - of the current supported features, all examples are done ✔️
 
 ## The Aim
