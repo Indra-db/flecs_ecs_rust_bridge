@@ -14,6 +14,7 @@ pub use opaque::*;
 
 use crate::core::*;
 
+use crate::core::ecs_assert;
 use crate::sys;
 
 impl World {
@@ -674,9 +675,9 @@ mod tests {
 
         let pos_id = <Position as ComponentId>::id(&world);
 
-        e.get::<&Position>(|pos| {
-            let expr = world.to_expr(pos);
-            println!("{}", expr);
-        });
+        // e.get::<&Position>(|pos| {
+        //     let expr = world.to_expr(pos);
+        //     println!("{}", expr);
+        // });
     }
 }

@@ -49,7 +49,7 @@ impl<'a> EntityView<'a> {
         self
     }
 
-    pub fn set_json<T: IntoComponentId>(self, json: &str, desc: Option<&FromJsonDesc>) -> Self {
+    pub fn set_json<T: ComponentOrPairId>(self, json: &str, desc: Option<&FromJsonDesc>) -> Self {
         self.set_json_id(T::get_id(self.world), json, desc)
     }
 
@@ -102,7 +102,7 @@ impl<'a> EntityView<'a> {
     }
 }
 
-impl<'a, const IS_RUN: bool, P> Iter<'a, IS_RUN, P>
+impl<'a, const IS_RUN: bool, P> TableIter<'a, IS_RUN, P>
 where
     P: ComponentId,
 {
@@ -150,13 +150,10 @@ impl World {
     ///
     /// * C++ API: `world::to_json`
     #[doc(alias = "world::to_json")]
-    pub fn to_json<T: IntoComponentId + FlecsCastType>(
-        &self,
-        value: &<T as FlecsCastType>::CastType,
-    ) -> String {
+    pub fn to_json<T: ComponentOrPairId>(&self, value: &T::CastType) -> String {
         self.to_json_id(
             T::get_id(self),
-            value as *const <T as FlecsCastType>::CastType as *const std::ffi::c_void,
+            value as *const T::CastType as *const std::ffi::c_void,
         )
     }
 
@@ -211,15 +208,15 @@ impl World {
     ///
     /// * C++ API: `world::from_json`
     #[doc(alias = "world::from_json")]
-    pub fn from_json<T: IntoComponentId + FlecsCastType>(
+    pub fn from_json<T: ComponentOrPairId>(
         &self,
-        value: &mut <T as FlecsCastType>::CastType,
+        value: &mut T::CastType,
         json: &str,
         desc: Option<&FromJsonDesc>,
     ) {
         self.from_json_id(
             T::get_id(self),
-            value as *mut <T as FlecsCastType>::CastType as *mut std::ffi::c_void,
+            value as *mut T::CastType as *mut std::ffi::c_void,
             json,
             desc,
         )

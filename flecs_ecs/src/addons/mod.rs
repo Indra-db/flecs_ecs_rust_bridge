@@ -7,9 +7,6 @@ pub mod meta;
 #[cfg(feature = "flecs_module")]
 pub mod module;
 
-#[cfg(feature = "flecs_module")]
-pub use module::*;
-
 #[cfg(feature = "flecs_system")]
 pub mod system;
 
@@ -21,3 +18,5 @@ pub mod experimental;
 
 #[cfg(feature = "flecs_json")]
 pub mod json;
+#[cfg(feature = "flecs_stats")]
+pub mod stats;

@@ -1,3 +1,4 @@
+//! Iterators used to iterate over tables and table rows in [`Query`], [`System`][crate::addons::system::System] and [`Observer`].
 use std::marker::PhantomData;
 use std::{ffi::CStr, os::raw::c_void, ptr::NonNull};
 
@@ -9,12 +10,12 @@ pub(crate) enum IterType {
     Each,
 }
 
-pub struct Iter<'a, const IS_RUN: bool = true, P = ()> {
+pub struct TableIter<'a, const IS_RUN: bool = true, P = ()> {
     pub(crate) iter: &'a mut IterT,
     marker: PhantomData<P>,
 }
 
-impl<'a, const IS_RUN: bool, P> Iter<'a, IS_RUN, P>
+impl<'a, const IS_RUN: bool, P> TableIter<'a, IS_RUN, P>
 where
     P: ComponentId,
 {
@@ -45,8 +46,38 @@ where
         }
     }
 
-    pub fn iter(&self) -> IterIterator<IS_RUN, P> {
-        IterIterator {
+    /// Return the iterator type
+    ///
+    /// # Example
+    ///
+    /// ```
+    ///
+    /// #[derive(Component)]
+    /// struct Position {
+    ///    x: f32,
+    ///    y: f32,
+    /// }
+    ///
+    /// use flecs_ecs::prelude::*;
+    ///
+    /// let world = World::new();
+    ///
+    /// world.entity().set(Position { x: 1.0, y: 2.0 });
+    ///
+    /// let query = world.new_query::<&Position>();
+    ///
+    /// query.run(|mut it| {
+    ///   while it.next() { //for each different table
+    ///     for i in it.iter() {  //for each entity in the table
+    ///         let pos = it.field::<Position>(0).unwrap();
+    ///         assert_eq!(pos[0].x, 1.0);
+    ///         assert_eq!(pos[0].y, 2.0);
+    ///     }
+    ///   }
+    /// });
+    /// ```
+    pub fn iter(&self) -> TableRowIter<IS_RUN, P> {
+        TableRowIter {
             iter: self,
             index: 0,
         }
@@ -400,7 +431,7 @@ where
     }
 
     /// Obtain pair id matched for field.
-    /// This operation will return None if the field is not a pair.
+    /// This operation will return `None` if the field is not a pair.
     ///
     /// # Arguments
     ///
@@ -486,7 +517,7 @@ where
             FlecsErrorCode::InvalidOperation,
             "cannot .field from .each, use .field_at instead",
         );
-        self.field_internal::<T>(index)
+        self.field_internal::<T>(index).unwrap()
     }
 
     /// Get read/write access to field data.
@@ -519,7 +550,7 @@ where
             "cannot .field from .each, use .field_at instead",
         );
 
-        let id = <T::UnderlyingType as ComponentId>::get_id(self.world());
+        let id = <T::UnderlyingType as ComponentId>::id(self.world());
 
         if index > self.iter.field_count {
             return None;
@@ -530,7 +561,7 @@ where
         let is_id_correct = id == term_id;
 
         if is_id_correct || is_pair {
-            return Some(unsafe { self.field_internal::<T::UnderlyingType>(index) });
+            return unsafe { self.field_internal::<T::UnderlyingType>(index) };
         }
 
         None
@@ -676,7 +707,7 @@ where
         self.iter.group_id
     }
 
-    unsafe fn field_internal<T>(&self, index: i32) -> Field<T> {
+    unsafe fn field_internal<T>(&self, index: i32) -> Option<Field<T>> {
         let is_shared = !self.is_self(index);
 
         // If a shared column is retrieved with 'column', there will only be a
@@ -685,9 +716,13 @@ where
         let count = if is_shared { 1 } else { self.count() };
         let array =
             unsafe { sys::ecs_field_w_size(self.iter, std::mem::size_of::<T>(), index) as *mut T };
+
+        if array.is_null() {
+            return None;
+        }
         let slice = unsafe { std::slice::from_raw_parts_mut(array, count) };
 
-        Field::<T>::new(slice, is_shared)
+        Some(Field::<T>::new(slice, is_shared))
     }
 
     fn field_untyped_internal(&self, index: i32) -> FieldUntyped {
@@ -720,7 +755,13 @@ where
     /// the iterator is not being progressed automatically. An example of a valid
     /// context is inside of a `run()` callback. An example of an invalid context is
     /// inside of an `each()` callback.
-    pub fn next_iter(&mut self) -> bool {
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `iter::next`
+    #[doc(alias = "iter::next")]
+    #[allow(clippy::should_implement_trait)]
+    pub fn next(&mut self) -> bool {
         if IS_RUN {
             if self.iter.flags & sys::EcsIterIsValid != 0 && !self.iter.table.is_null() {
                 unsafe {
@@ -750,7 +791,7 @@ where
             ecs_assert!(
                 false,
                 FlecsErrorCode::InvalidOperation,
-                "you should not call next_iter in an `each` callback or `run_iter`"
+                "you should not call next in an `each` callback or `run_iter`"
             );
             false
         }
@@ -766,14 +807,48 @@ where
             }
         }
     }
+
+    /// Free iterator resources.
+    /// This operation only needs to be called when the iterator is not iterated
+    /// until completion (e.g. the last call to `next()` did not return false).
+    ///
+    /// Failing to call this operation on an unfinished iterator will throw a
+    /// `fatal LEAK_DETECTED` error.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use flecs_ecs::prelude::*;
+    ///
+    /// #[derive(Debug, Component, Default)]
+    /// pub struct Position {
+    ///     pub x: i32,
+    ///     pub y: i32,
+    /// }
+    ///
+    /// let world = World::new();
+    ///
+    /// world
+    ///     .new_query::<&mut Position>()
+    ///     .run(|it| {
+    ///         // this will ensure that the iterator is freed and no assertion will happen
+    ///         it.fini();    
+    ///     });
+    /// ```
+    pub fn fini(self) {
+        unsafe {
+            sys::ecs_iter_fini(self.iter);
+        }
+    }
 }
 
-pub struct IterIterator<'a, const IS_RUN: bool, P> {
-    iter: &'a Iter<'a, IS_RUN, P>,
+/// Iterator to iterate over rows in a table
+pub struct TableRowIter<'a, const IS_RUN: bool, P> {
+    iter: &'a TableIter<'a, IS_RUN, P>,
     index: usize,
 }
 
-impl<'a, const IS_RUN: bool, P> Iterator for IterIterator<'a, IS_RUN, P>
+impl<'a, const IS_RUN: bool, P> Iterator for TableRowIter<'a, IS_RUN, P>
 where
     P: ComponentId,
 {

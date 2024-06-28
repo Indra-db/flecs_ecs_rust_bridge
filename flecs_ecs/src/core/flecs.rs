@@ -317,18 +317,18 @@ pub mod meta {
     pub type Unit = sys::EcsUnit;
     pub type UnitPrefix = sys::EcsUnitPrefix;
 
-    crate::impl_component_traits_binding_type_w_id!(Type, ECS_META_TYPE);
-    crate::impl_component_traits_binding_type_w_id!(TypeSerializer, ECS_META_TYPE_SERIALIZER);
-    crate::impl_component_traits_binding_type_w_id!(Primitive, ECS_PRIMITIVE);
-    crate::impl_component_traits_binding_type_w_id!(EcsEnum, ECS_ENUM);
-    crate::impl_component_traits_binding_type_w_id!(Bitmask, ECS_BITMASK);
-    crate::impl_component_traits_binding_type_w_id!(Member, ECS_MEMBER);
-    crate::impl_component_traits_binding_type_w_id!(MemberRanges, ECS_MEMBER_RANGES);
-    crate::impl_component_traits_binding_type_w_id!(EcsStruct, ECS_STRUCT);
-    crate::impl_component_traits_binding_type_w_id!(Array, ECS_ARRAY);
-    crate::impl_component_traits_binding_type_w_id!(Vector, ECS_VECTOR);
-    crate::impl_component_traits_binding_type_w_id!(Unit, ECS_UNIT);
-    crate::impl_component_traits_binding_type_w_id!(UnitPrefix, ECS_UNIT_PREFIX);
+    super::impl_component_traits_binding_type_w_id!(Type, ECS_META_TYPE);
+    super::impl_component_traits_binding_type_w_id!(TypeSerializer, ECS_META_TYPE_SERIALIZER);
+    super::impl_component_traits_binding_type_w_id!(Primitive, ECS_PRIMITIVE);
+    super::impl_component_traits_binding_type_w_id!(EcsEnum, ECS_ENUM);
+    super::impl_component_traits_binding_type_w_id!(Bitmask, ECS_BITMASK);
+    super::impl_component_traits_binding_type_w_id!(Member, ECS_MEMBER);
+    super::impl_component_traits_binding_type_w_id!(MemberRanges, ECS_MEMBER_RANGES);
+    super::impl_component_traits_binding_type_w_id!(EcsStruct, ECS_STRUCT);
+    super::impl_component_traits_binding_type_w_id!(Array, ECS_ARRAY);
+    super::impl_component_traits_binding_type_w_id!(Vector, ECS_VECTOR);
+    super::impl_component_traits_binding_type_w_id!(Unit, ECS_UNIT);
+    super::impl_component_traits_binding_type_w_id!(UnitPrefix, ECS_UNIT_PREFIX);
 }
 
 // Doc module components
