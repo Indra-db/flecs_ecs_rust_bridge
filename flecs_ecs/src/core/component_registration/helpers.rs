@@ -50,6 +50,32 @@ where
     type_info
 }
 
+pub(crate) fn external_create_type_info<T>() -> flecs_ecs_sys::ecs_type_info_t {
+    let size = std::mem::size_of::<T>();
+    let alignment = if size != 0 {
+        std::mem::align_of::<T>()
+    } else {
+        0
+    };
+    let mut hooks = Default::default();
+    if size != 0 && const { std::mem::needs_drop::<T>() } {
+        // Register lifecycle callbacks, but only if the component has a
+        // size and requires initialization of heap memory / needs drop.
+        // Components that don't have a size are tags, and tags don't
+        // require construction/destruction/copy/move's.
+        flecs_ecs::core::lifecycle_traits::register_lifecycle_actions::<T>(&mut hooks);
+    }
+
+    let type_info: flecs_ecs_sys::ecs_type_info_t = flecs_ecs_sys::ecs_type_info_t {
+        size: size as i32,
+        alignment: alignment as i32,
+        hooks,
+        component: 0,
+        name: std::ptr::null(),
+    };
+    type_info
+}
+
 pub(crate) fn create_entity_desc(
     name: *const c_char,
     symbol: *const c_char,
