@@ -13,9 +13,9 @@ where
     F: Fn(&Serializer, &T) -> i32,
 {
     fn to_extern_fn(self) -> extern "C" fn(&Serializer, &T) -> i32 {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T>(ser: &Serializer, value: &T) -> i32
@@ -38,9 +38,9 @@ where
     F: Fn(&mut T, bool),
 {
     fn to_extern_fn(self) -> extern "C" fn(&mut T, bool) {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T>(value: &mut T, data: bool)
@@ -63,9 +63,9 @@ where
     F: Fn(&mut T, i8),
 {
     fn to_extern_fn(self) -> extern "C" fn(&mut T, i8) {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T>(value: &mut T, data: i8)
@@ -88,9 +88,9 @@ where
     F: Fn(&mut T, i64),
 {
     fn to_extern_fn(self) -> extern "C" fn(&mut T, i64) {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T>(value: &mut T, data: i64)
@@ -113,9 +113,9 @@ where
     F: Fn(&mut T, u64),
 {
     fn to_extern_fn(self) -> extern "C" fn(&mut T, u64) {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T>(value: &mut T, data: u64)
@@ -138,9 +138,9 @@ where
     F: Fn(&mut T, f32),
 {
     fn to_extern_fn(self) -> extern "C" fn(&mut T, f32) {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T>(value: &mut T, data: f32)
@@ -163,9 +163,9 @@ where
     F: Fn(&mut T, *const i8),
 {
     fn to_extern_fn(self) -> extern "C" fn(&mut T, *const i8) {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T>(value: &mut T, data: *const i8)
@@ -188,9 +188,9 @@ where
     F: Fn(&mut T, WorldRef<'a>, Entity),
 {
     fn to_extern_fn(self) -> extern "C" fn(&'a mut T, WorldRef<'a>, Entity) {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<'a, F, T>(value: &'a mut T, world: WorldRef<'a>, entity: Entity)
@@ -213,9 +213,9 @@ where
     F: Fn(&mut T),
 {
     fn to_extern_fn(self) -> extern "C" fn(&mut T) {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T>(value: &mut T)
@@ -238,9 +238,9 @@ where
     F: Fn(&mut T),
 {
     fn to_extern_fn(self) -> extern "C" fn(&mut T) {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T>(value: &mut T)
@@ -263,9 +263,9 @@ where
     F: Fn(&mut T, usize) -> &mut ElemType,
 {
     fn to_extern_fn(self) -> extern "C" fn(&mut T, usize) -> &mut ElemType {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T, ElemType>(value: &mut T, elem: usize) -> &mut ElemType
@@ -288,9 +288,9 @@ where
     F: Fn(&mut T, *const i8) -> *mut c_void,
 {
     fn to_extern_fn(self) -> extern "C" fn(&mut T, *const i8) -> *mut c_void {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T>(value: &mut T, data: *const i8) -> *mut c_void
@@ -313,9 +313,9 @@ where
     F: Fn(&mut T) -> usize,
 {
     fn to_extern_fn(self) -> extern "C" fn(&mut T) -> usize {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T>(value: &mut T) -> usize
@@ -338,9 +338,9 @@ where
     F: Fn(&mut T, usize),
 {
     fn to_extern_fn(self) -> extern "C" fn(&mut T, usize) {
-        // const {
-        assert!(std::mem::size_of::<Self>() == 0);
-        // }
+        const {
+            assert!(std::mem::size_of::<Self>() == 0);
+        }
         std::mem::forget(self);
 
         extern "C" fn output<F, T>(value: &mut T, data: usize)
