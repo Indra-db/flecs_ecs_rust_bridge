@@ -121,23 +121,12 @@ fn generate_tag_trait(has_fields: bool) -> proc_macro2::TokenStream {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct GenericTypeInfo {
     contains_type_bound: bool,
     contains_generic_type: bool,
     is_bound_default: bool,
     is_bound_clone: bool,
-}
-
-impl Default for GenericTypeInfo {
-    fn default() -> Self {
-        Self {
-            contains_type_bound: false,
-            contains_generic_type: false,
-            is_bound_default: false,
-            is_bound_clone: false,
-        }
-    }
 }
 
 impl GenericTypeInfo {
@@ -397,18 +386,10 @@ fn impl_cached_component_data_struct(
             const IS_GENERIC: bool = true;
         }
     };
-    let clone_default = if !is_generic || (contains_lifetime_bound && !contains_any_generic_type) {
-        quote! {
-            const IMPLS_CLONE: bool = {
-                use flecs_ecs::core::utility::traits::DoesNotImpl;
-                flecs_ecs::core::utility::types::ImplementsClone::<#name #type_generics>::IMPLS
-            };
-            const IMPLS_DEFAULT: bool = {
-                use flecs_ecs::core::utility::traits::DoesNotImpl;
-                flecs_ecs::core::utility::types::ImplementsDefault::<#name #type_generics>::IMPLS
-            };
-        }
-    } else if contains_any_generic_type && contains_all_default_bound && contains_all_clone_bound {
+    let clone_default = if !is_generic
+        || (contains_lifetime_bound && !contains_any_generic_type)
+        || (contains_any_generic_type && contains_all_default_bound && contains_all_clone_bound)
+    {
         quote! {
             const IMPLS_CLONE: bool = {
                 use flecs_ecs::core::utility::traits::DoesNotImpl;

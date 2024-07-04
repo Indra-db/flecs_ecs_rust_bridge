@@ -56,3 +56,11 @@ workspace = false
 script = { file = "${CARGO_MAKE_WORKING_DIRECTORY}/scripts/fbench_log.sh", absolute_path = true }
 dependencies = ["chmod"]
 workspace = false
+
+# When updating this, see if any docs.rs configs in `Cargo.toml` files need updating.
+[tasks.fdocs]
+condition = { channels = ["nightly"] }
+env = { "RUSTDOCFLAGS" = "--cfg docsrs -Zunstable-options --generate-link-to-definition" }
+command = "cargo"
+args = ["doc", "-Zunstable-options", "-Zrustdoc-scrape-examples", "${@}"]
+workspace = false

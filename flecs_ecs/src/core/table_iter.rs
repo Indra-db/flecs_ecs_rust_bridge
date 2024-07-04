@@ -124,7 +124,7 @@ where
     /// * C++ API: `iter::entity`
     #[doc(alias = "iter::entity")]
     pub fn entity(&self, row: usize) -> EntityView<'a> {
-        unsafe { EntityView::new_from(self.world(), *self.iter.entities.add(row)) }
+        unsafe { EntityView::new_from(self.real_world(), *self.iter.entities.add(row)) }
     }
 
     /// Return a mut reference to the raw iterator object
@@ -637,6 +637,68 @@ where
         }
     }
 
+    /// Get the component id of the field matched with the specified index.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The field index.
+    ///
+    /// ```
+    /// use flecs_ecs::prelude::*;
+    ///
+    /// #[derive(Component)]
+    /// struct Action;
+    ///
+    /// #[derive(Component)]
+    /// struct DerivedAction;
+    ///
+    /// #[derive(Component)]
+    /// struct DerivedAction2;
+    ///
+    /// let mut world = World::new();
+    ///
+    /// let comp = world.component::<Action>();
+    ///
+    /// world
+    ///     .component::<DerivedAction>()
+    ///     .add_trait::<(flecs::IsA, Action)>();
+    ///
+    /// world
+    ///     .component::<DerivedAction>()
+    ///     .add_trait::<(flecs::IsA, Action)>();
+    ///
+    /// world
+    ///     .component::<DerivedAction2>()
+    ///     .add_trait::<(flecs::IsA, Action)>();
+    ///
+    /// let entity = world
+    ///     .entity()
+    ///     .add::<DerivedAction>()
+    ///     .add::<DerivedAction2>();
+    ///
+    /// world.new_query::<&Action>().run(|mut it| {
+    ///     let mut vec = vec![];
+    ///     while it.next() {
+    ///         for i in it.iter() {
+    ///             vec.push(it.component_id_at(0));
+    ///         }
+    ///     }
+    ///    let id = world.component_id::<DerivedAction>();
+    ///    let id2 = world.component_id::<DerivedAction2>();
+    ///    assert_eq!(vec, vec![id, id2]);
+    /// });
+    /// ```
+    pub fn component_id_at(&self, index: i32) -> Id {
+        ecs_assert!(
+            index < self.iter.field_count,
+            FlecsErrorCode::InvalidParameter,
+            index
+        );
+
+        let id = unsafe { self.iter.ids.add(index as usize).read() };
+        Id::new(id)
+    }
+
     /// Get readonly access to entity ids.
     ///
     /// # Returns
@@ -747,56 +809,6 @@ where
         )
     }
 
-    /// Progress iterator.
-    ///
-    /// # Safety
-    ///
-    /// This operation is unsafe because it can only be called from a context where
-    /// the iterator is not being progressed automatically. An example of a valid
-    /// context is inside of a `run()` callback. An example of an invalid context is
-    /// inside of an `each()` callback.
-    ///
-    /// # See also
-    ///
-    /// * C++ API: `iter::next`
-    #[doc(alias = "iter::next")]
-    #[allow(clippy::should_implement_trait)]
-    pub fn next(&mut self) -> bool {
-        if IS_RUN {
-            if self.iter.flags & sys::EcsIterIsValid != 0 && !self.iter.table.is_null() {
-                unsafe {
-                    sys::ecs_table_unlock(self.iter.world, self.iter.table);
-                };
-            }
-
-            let result = {
-                if let Some(next) = self.iter.next {
-                    //sets flag invalid
-                    unsafe { next(self.iter) }
-                } else {
-                    self.iter.flags &= !sys::EcsIterIsValid;
-                    return false;
-                }
-            };
-
-            self.iter.flags |= sys::EcsIterIsValid;
-            if result && !self.iter.table.is_null() {
-                unsafe {
-                    sys::ecs_table_lock(self.iter.world, self.iter.table);
-                };
-            }
-
-            result
-        } else {
-            ecs_assert!(
-                false,
-                FlecsErrorCode::InvalidOperation,
-                "you should not call next in an `each` callback or `run_iter`"
-            );
-            false
-        }
-    }
-
     /// Forward to each.
     /// If a system has an each callback registered, this operation will forward
     /// the current iterator to the each callback.
@@ -806,6 +818,50 @@ where
                 each(self.iter);
             }
         }
+    }
+}
+
+impl<'a, P> TableIter<'a, true, P>
+where
+    P: ComponentId,
+{
+    /// Progress iterator.
+    ///
+    /// # Safety
+    ///
+    /// This operation is valid inside a `run()` callback. An example of an
+    /// invalid context is inside an `each()` callback.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `iter::next`
+    #[doc(alias = "iter::next")]
+    #[allow(clippy::should_implement_trait)]
+    pub fn next(&mut self) -> bool {
+        if self.iter.flags & sys::EcsIterIsValid != 0 && !self.iter.table.is_null() {
+            unsafe {
+                sys::ecs_table_unlock(self.iter.world, self.iter.table);
+            };
+        }
+
+        let result = {
+            if let Some(next) = self.iter.next {
+                //sets flag invalid
+                unsafe { next(self.iter) }
+            } else {
+                self.iter.flags &= !sys::EcsIterIsValid;
+                return false;
+            }
+        };
+
+        self.iter.flags |= sys::EcsIterIsValid;
+        if result && !self.iter.table.is_null() {
+            unsafe {
+                sys::ecs_table_lock(self.iter.world, self.iter.table);
+            };
+        }
+
+        result
     }
 
     /// Free iterator resources.
@@ -832,7 +888,7 @@ where
     ///     .new_query::<&mut Position>()
     ///     .run(|it| {
     ///         // this will ensure that the iterator is freed and no assertion will happen
-    ///         it.fini();    
+    ///         it.fini();
     ///     });
     /// ```
     pub fn fini(self) {

@@ -1,8 +1,9 @@
-use crate::core::*;
 use std::{
     ffi::CStr,
     sync::atomic::{AtomicU32, Ordering},
 };
+
+use crate::core::*;
 
 /// Indicates that the type is a tag component. A tag component is a component that does not have any data. Is a zero-sized type.
 pub trait TagComponent {}
@@ -66,7 +67,7 @@ impl<T> ComponentType<Enum> for &mut T where T: ComponentType<Enum> {}
 #[cfg_attr(doctest, doc = " ````no_test")]
 /// ```
 ///     #[derive(Component)] //this will implement the trait for the type
-///      struct Position {t
+///      struct Position {
 ///          vec: Vec<i32>,
 ///      }
 /// ```
@@ -80,6 +81,10 @@ impl<T> ComponentType<Enum> for &mut T where T: ComponentType<Enum> {}
 /// If the world doesn't, this implies the component was registered by a different world.
 /// In such a case, the component is registered with the present world using the pre-existing ID.
 /// If the ID is already known, the trait takes care of the component registration and checks for consistency in the input.
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is not a flecs component.",
+    label = "use `#[derive(Component)]` on `{Self}` to mark it as one."
+)]
 pub trait ComponentId: Sized + ComponentInfo + 'static {
     #[doc(hidden)]
     type UnderlyingType: ComponentId;

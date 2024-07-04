@@ -16,7 +16,7 @@ use crate::core::*;
 use crate::sys;
 
 /// Systems are a query + function that can be ran manually or by a pipeline.
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct System<'a> {
     entity: EntityView<'a>,
 }
@@ -34,6 +34,13 @@ impl<'a> DerefMut for System<'a> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.entity
+    }
+}
+
+impl<'a> IntoWorld<'a> for System<'a> {
+    #[inline(always)]
+    fn world(&self) -> WorldRef<'a> {
+        self.world
     }
 }
 

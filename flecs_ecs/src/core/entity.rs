@@ -195,6 +195,9 @@ mod bit_operations {
 }
 
 mod from_operations {
+    #[cfg(feature = "flecs_system")]
+    use crate::prelude::system::System;
+
     use super::*;
     impl From<u64> for Entity {
         #[inline]
@@ -224,6 +227,31 @@ mod from_operations {
         #[inline]
         fn from(component: UntypedComponent<'a>) -> Self {
             component.entity.id
+        }
+    }
+
+    impl<T> From<Query<T>> for Entity
+    where
+        T: QueryTuple,
+    {
+        #[inline]
+        fn from(query: Query<T>) -> Self {
+            Entity(unsafe { query.query.as_ref().entity })
+        }
+    }
+
+    impl<'a> From<Observer<'a>> for Entity {
+        #[inline]
+        fn from(observer: Observer<'a>) -> Self {
+            observer.id
+        }
+    }
+
+    #[cfg(feature = "flecs_system")]
+    impl<'a> From<System<'a>> for Entity {
+        #[inline]
+        fn from(system: System<'a>) -> Self {
+            system.id
         }
     }
 

@@ -1,7 +1,7 @@
 //! Table column API.
 
 use std::{
-    ops::{Deref, DerefMut, Index, IndexMut},
+    ops::{Deref, DerefMut},
     os::raw::c_void,
 };
 
@@ -89,19 +89,8 @@ impl FieldUntyped {
             is_shared,
         }
     }
-}
 
-impl Index<usize> for FieldUntyped {
-    type Output = c_void;
-
-    /// # Returns
-    ///
-    /// Returns element in component array
-    ///
-    /// # Safety
-    ///
-    /// This operator may only be used if the column is not shared.
-    fn index(&self, index: usize) -> &Self::Output {
+    pub fn at(&self, index: usize) -> *const c_void {
         ecs_assert!(
             index < self.count,
             FlecsErrorCode::OutOfRange,
@@ -116,19 +105,10 @@ impl Index<usize> for FieldUntyped {
             "Column is shared, cannot index"
         );
 
-        unsafe { &*(self.array.add(index * self.size)) }
+        unsafe { self.array.add(index * self.size) }
     }
-}
 
-impl IndexMut<usize> for FieldUntyped {
-    /// # Returns
-    ///
-    /// Returns element in component array
-    ///
-    /// # Safety
-    ///
-    /// This operator may only be used if the column is not shared.
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+    pub fn at_mut(&mut self, index: usize) -> *mut c_void {
         ecs_assert!(
             index < self.count,
             FlecsErrorCode::OutOfRange,
@@ -143,6 +123,8 @@ impl IndexMut<usize> for FieldUntyped {
             "Column is shared, cannot index"
         );
 
-        unsafe { &mut *(self.array.add(index * self.size)) }
+        unsafe { self.array.add(index * self.size) }
     }
 }
+
+// no impl Index/IndexMut for FieldUntyped because it's untyped and it does not support returning ptrs well

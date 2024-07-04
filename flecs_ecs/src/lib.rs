@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 #[cfg(all(
     feature = "flecs_force_build_release_c",

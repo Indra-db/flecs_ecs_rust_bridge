@@ -903,6 +903,108 @@ where
         }
         result
     }
+
+    /// Limit results to tables with specified group id (grouped queries only)
+    ///
+    /// # Arguments
+    ///
+    /// * `group_id`: the group id to set
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `iter_iterable::set_group`
+    #[doc(alias = "iter_iterable::set_group")]
+    fn set_group_id(&mut self, group_id: impl Into<Entity>) -> QueryIter<P, T> {
+        let mut iter = self.iterable();
+        iter.set_group_id(group_id);
+        iter
+    }
+
+    /// Limit results to tables with specified group id (grouped queries only)
+    ///
+    /// # Type parameters
+    ///
+    /// * `Group`: the group to set
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `iter_iterable::set_group`
+    #[doc(alias = "iter_iterable::set_group")]
+    fn set_group<Group: ComponentId>(&mut self) -> QueryIter<P, T> {
+        let mut iter = self.iterable();
+        iter.set_group::<Group>();
+        iter
+    }
+
+    /// set variable of iter
+    ///
+    /// # Arguments
+    ///
+    /// * `var_id`: the variable id to set
+    ///
+    /// * `value`: the value to set
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `iterable::set_var`
+    #[doc(alias = "iterable::set_var")]
+    fn set_var(&mut self, var_id: i32, value: impl Into<Entity>) -> QueryIter<P, T> {
+        let mut iter = self.iterable();
+        iter.set_var(var_id, value);
+        iter
+    }
+
+    /// set variable of iter as table
+    ///
+    /// # Arguments
+    ///
+    /// * `var_id`: the variable id to set
+    ///
+    /// * `range`: the range to set
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `iter_iterable::set_var`
+    #[doc(alias = "iter_iterable::set_var")]
+    fn set_var_table(&mut self, var_id: i32, table: impl IntoTableRange) -> QueryIter<P, T> {
+        let mut iter = self.iterable();
+        iter.set_var_table(var_id, table);
+        iter
+    }
+
+    /// set variable for rule iter
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: the name of the variable to set
+    /// * `value`: the value to set
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `iter_iterable::set_var`
+    #[doc(alias = "iter_iterable::set_var")]
+    fn set_var_expr(&mut self, name: &str, value: impl Into<Entity>) -> QueryIter<P, T> {
+        let mut iter = self.iterable();
+        iter.set_var_expr(name, value);
+        iter
+    }
+
+    /// set variable for rule iter as table
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: the name of the variable to set
+    /// * `range`: the range to set
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `iter_iterable::set_var`
+    #[doc(alias = "iter_iterable::set_var")]
+    fn set_var_table_expr(&mut self, name: &str, table: impl IntoTableRange) -> QueryIter<P, T> {
+        let mut iter = self.iterable();
+        iter.set_var_table_expr(name, table);
+        iter
+    }
 }
 
 unsafe extern "C" fn __internal_query_execute_each<T, Func>(iter: *mut IterT)

@@ -116,13 +116,13 @@ fn main() {
 
     // Create a query that finds the countries persons live in. Note that these
     // have not been explicitly added to the Person entities, but because the
-    // LocatedIn is transitive, the rule engine will traverse the relationship
+    // LocatedIn is transitive, the query engine will traverse the relationship
     // until it found something that is a country.
     //
     // The equivalent of this query in the DSL is:
     //   Person, (LocatedIn, $Location), Country($Location)
 
-    let rule = world
+    let query = world
         .query::<()>()
         .with::<&Person>()
         .with_first_name::<&LocatedIn>("$Location")
@@ -132,10 +132,10 @@ fn main() {
 
     // Lookup the index of the variable. This will let us quickly lookup its
     // value while we're iterating.
-    let location_var = rule.find_var("Location").unwrap();
+    let location_var = query.find_var("Location").unwrap();
 
-    // Iterate the rule
-    rule.iterable().each_iter(|it, index, _| {
+    // Iterate the query
+    query.each_iter(|it, index, _| {
         println!("{} lives in {}", it.entity(index), it.get_var(location_var));
     });
 

@@ -12,6 +12,7 @@ categories = ["game-development", "api-bindings", "simulation", "development-too
 [lints]
 workspace = true
 
+# When updating this, also update the `fdocs` task in `Makefile.toml`
 [package.metadata.docs.rs]
 rustdoc-args = [ "-Zunstable-options", "--generate-link-to-definition"]
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]

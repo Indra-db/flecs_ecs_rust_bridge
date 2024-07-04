@@ -3,6 +3,7 @@
 flecs_ecs/rustfmt.toml
 rustfmt.toml
 .DS_Store
+.idea
 flecs_ecs/src/main.rs
 flecs_ecs_test/
 flecs_ecs/benches/fbench_log/

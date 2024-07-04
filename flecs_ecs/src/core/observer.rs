@@ -10,7 +10,7 @@ use crate::sys;
 /// Observers let applications register callbacks for ECS events.
 ///
 /// These are typically constructed via [`World::observer()`].
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Observer<'a> {
     entity: EntityView<'a>,
 }
@@ -28,6 +28,13 @@ impl<'a> DerefMut for Observer<'a> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.entity
+    }
+}
+
+impl<'a> IntoWorld<'a> for Observer<'a> {
+    #[inline(always)]
+    fn world(&self) -> WorldRef<'a> {
+        self.world
     }
 }
 

@@ -2,7 +2,7 @@ use crate::core::*;
 
 /// Extracts the Ecs ID from a type.
 /// Extension trait from [`Into<Entity>`] for tuples that implement `Into<Entity>`.
-/// These types can be `IdView`, `EntityView`, `Entity`, `Component`, `UntypedComponent`.
+/// These types can be [`Id`], [`IdView`], [`Entity`], [`EntityView`], [`Component`], [`UntypedComponent`].
 pub trait IntoId: Into<Id> {
     /// # Safety
     /// This is used to determine if the type is a pair or not.

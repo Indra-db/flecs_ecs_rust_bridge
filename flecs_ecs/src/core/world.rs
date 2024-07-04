@@ -4,9 +4,6 @@ use std::any::TypeId;
 use std::ffi::CStr;
 use std::{os::raw::c_void, ptr::NonNull};
 
-#[cfg(feature = "flecs_app")]
-use crate::addons::app::App;
-
 #[cfg(feature = "flecs_system")]
 use crate::addons::system::{System, SystemBuilder};
 
@@ -4579,82 +4576,4 @@ impl World {
     pub fn using_task_threads(&self) -> bool {
         unsafe { sys::ecs_using_task_threads(self.raw_world.as_ptr()) }
     }
-}
-
-/// Module mixin implementation
-#[cfg(feature = "flecs_module")]
-impl World {
-    /// Define a module.
-    /// This operation is not mandatory, but can be called inside the module ctor to
-    /// obtain the entity associated with the module, or override the module name.
-    ///
-    /// # Type Parameters
-    ///
-    /// * `M` - The type of the module.
-    ///
-    /// # Arguments
-    ///
-    /// * `name` - The name to give the module.
-    ///
-    /// # Returns
-    ///
-    /// The module entity.
-    ///
-    /// # See also
-    ///
-    /// * C++ API: `world::module`
-    pub fn module<M: ComponentId>(&self, name: &str) -> EntityView {
-        let id = self.component_named::<M>(name).id();
-
-        let name = compact_str::format_compact!("{}\0", name);
-        unsafe {
-            sys::ecs_add_path_w_sep(
-                self.raw_world.as_ptr(),
-                *id,
-                0,
-                name.as_ptr() as *const _,
-                SEPARATOR.as_ptr(),
-                SEPARATOR.as_ptr(),
-            );
-        }
-        self.set_scope_id(id);
-        EntityView::new_from(self, *id)
-    }
-}
-
-/// App mixin implementation
-#[cfg(feature = "flecs_app")]
-impl World {
-    /// Create a new app.
-    /// The app builder is a convenience wrapper around a loop that runs
-    /// [`World::progress()`]. An app allows for writing platform agnostic code,
-    /// as it provides hooks to modules for overtaking the main loop which is
-    /// required for frameworks like emscripten.
-    ///
-    /// # See also
-    ///
-    /// * C++ API: `world::app`
-    #[doc(alias = "world::app")]
-    #[inline(always)]
-    pub fn app(&self) -> App {
-        App::new(self)
-    }
-}
-
-/// Script mixin implementation
-#[cfg(feature = "flecs_script")]
-impl World {
-    // pub fn to_expr_id(
-    //     &self,
-    //     id_of_value: impl Into<Entity>,
-    //     value: *const std::ffi::c_void,
-    // ) -> String {
-    //     use crate::prelude::experimental::flecs_script::*;
-    //     Script::to_expr_id(self, id_of_value, value)
-    // }
-
-    // pub fn to_expr<T: ComponentId>(&self, value: &T) -> String {
-    //     use crate::prelude::experimental::flecs_script::*;
-    //     Script::to_expr(self, value)
-    // }
 }

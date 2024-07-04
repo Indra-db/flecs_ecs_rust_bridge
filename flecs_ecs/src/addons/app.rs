@@ -20,6 +20,7 @@ impl<'a> App<'a> {
     ///
     /// # See also
     ///
+    /// * [`World::app()`]
     /// * C++ API: `app_builder::app_builder`
     #[doc(alias = "app_builder::app_builder")]
     pub fn new(world: impl IntoWorld<'a>) -> Self {
@@ -122,8 +123,10 @@ impl<'a> App<'a> {
     ///
     /// # See also
     ///
+    /// * [`addons::stats`](crate::addons::stats)
     /// * C++ API: `app_builder::enable_stats`
     #[doc(alias = "app_builder::enable_stats")]
+    #[cfg(feature = "flecs_stats")]
     pub fn enable_stats(&mut self, enable: bool) -> &mut Self {
         self.desc.enable_stats = enable;
         self
@@ -161,7 +164,7 @@ impl<'a> App<'a> {
     }
 
     /// Run application. This will run the application with the parameters specified in desc.
-    /// After the application quits (`ecs_quit`() is called) this will return.
+    /// After the application quits ([`World::quit()`] is called) this will return.
     /// If a custom run action is set, it will be invoked by this operation.
     /// The default run action calls the frame action in a loop until it returns a non-zero value.
     ///
@@ -187,18 +190,30 @@ impl<'a> App<'a> {
             }
         }
         result
+    }
+}
 
-        /*
-                int result = ecs_app_run(world_, &desc_);
-        if (ecs_should_quit(world_)) {
-            // Only free world if quit flag is set. This ensures that we won't
-            // try to cleanup the world if the app is used in an environment
-            // that takes over the main loop, like with emscripten.
-            if (!flecs_poly_release(world_)) {
-                ecs_fini(world_);
-            }
-        }
-        return result;
-         */
+/// App mixin implementation
+impl World {
+    /// Create a new app.
+    /// The app builder is a convenience wrapper around a loop that runs
+    /// [`World::progress()`]. An app allows for writing platform agnostic code,
+    /// as it provides hooks to modules for overtaking the main loop which is
+    /// required for frameworks like emscripten.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `world::app`
+    #[doc(alias = "world::app")]
+    #[inline(always)]
+    pub fn app(&self) -> App {
+        App::new(self)
+    }
+}
+
+impl<'a> IntoWorld<'a> for App<'a> {
+    #[inline(always)]
+    fn world(&self) -> WorldRef<'a> {
+        self.world
     }
 }

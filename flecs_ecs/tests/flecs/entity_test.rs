@@ -1033,13 +1033,13 @@ fn entity_get_type() {
     {
         let type_2 = entity.archetype();
         assert_eq!(type_2.count(), 1);
-        assert_eq!(type_2[0], world.id_from::<Position>());
+        assert_eq!(type_2.get(0).unwrap(), world.id_from::<Position>());
     }
 
     entity.set(Velocity { x: 0, y: 0 });
     let type_3 = entity.archetype();
     assert_eq!(type_3.count(), 2);
-    assert_eq!(type_3[1], world.id_from::<Velocity>());
+    assert_eq!(type_3.get(1).unwrap(), world.id_from::<Velocity>());
 }
 
 #[test]

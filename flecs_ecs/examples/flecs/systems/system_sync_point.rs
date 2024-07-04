@@ -34,7 +34,7 @@ fn main() {
         .system_named::<()>("SetVelocitySP")
         .with::<&PositionSP>()
         .set_inout_none()
-        .write::<&mut VelocitySP>() // VelocitySP is written, but shouldn't be matched
+        .write::<VelocitySP>() // VelocitySP is written, but shouldn't be matched
         .each_entity(|e, ()| {
             e.set(VelocitySP { x: 1.0, y: 2.0 });
         });
@@ -86,7 +86,7 @@ fn main() {
 
     // The "merge" lines indicate sync points.
     //
-    // Removing '.write::<&mut VelocitySP>()' from the system will remove the first
+    // Removing `.write::<VelocitySP>()` from the system will remove the first
     // sync point from the schedule.
 }
 

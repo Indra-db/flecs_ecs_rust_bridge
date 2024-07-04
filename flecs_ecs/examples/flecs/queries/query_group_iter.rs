@@ -95,7 +95,7 @@ fn main() {
         .add::<Soldier>()
         .add::<Npc>();
 
-    let query = world
+    let mut query = world
         .query::<()>()
         .with::<&Npc>()
         .group_by::<WorldCell>()
@@ -119,7 +119,7 @@ fn main() {
 
     println!("Tables for cell 1_0:");
 
-    query.iterable().set_group::<Cell_1_0>().run(|mut iter| {
+    query.set_group::<Cell_1_0>().run(|mut iter| {
         while iter.next() {
             let world = iter.world();
             let group = world.entity_from_id(iter.group_id());

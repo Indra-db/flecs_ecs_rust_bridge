@@ -91,7 +91,7 @@ fn main() {
     // The way to read how this query is evaluated is:
     // - find all entities with (Platoon, *), store * in _Platoon
     // - check if _Platoon has (Player, *), store * in _Player
-    let query = world
+    let mut query = world
         .query::<&RangedUnit>()
         .with::<&Platoon>()
         .set_second_name("$platoon")
@@ -109,7 +109,6 @@ fn main() {
 
     // Iterate query, limit the results to units of MyPlayer
     query
-        .iterable()
         .set_var(player_var, world.lookup_recursively("MyPlayer"))
         .each_iter(|it, index, _| {
             let unit = it.entity(index);

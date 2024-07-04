@@ -2,6 +2,7 @@
 use crate::core::{EntityT, IntoWorld, World};
 use crate::sys;
 
+#[cfg(feature = "flecs_module")]
 use super::module::Module;
 
 /// Component that stores world statistics
@@ -16,6 +17,7 @@ pub type SystemStats = sys::EcsSystemStats;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Stats;
 
+#[cfg(feature = "flecs_module")]
 impl Module for Stats {
     fn module(world: &World) {
         unsafe { sys::FlecsStatsImport(world.ptr_mut()) };

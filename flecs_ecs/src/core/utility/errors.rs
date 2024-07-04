@@ -157,6 +157,7 @@ macro_rules! ecs_assert {
 }
 
 /// Macro to abort the application when an error occurs.
+#[allow(unused_macros)]
 macro_rules! ecs_abort {
     ($error_code:expr $(,)?) => {
         let file = file!();
@@ -208,5 +209,6 @@ macro_rules! ecs_abort {
     };
 }
 
+#[allow(unused_imports)]
 pub(crate) use ecs_abort;
 pub(crate) use ecs_assert;

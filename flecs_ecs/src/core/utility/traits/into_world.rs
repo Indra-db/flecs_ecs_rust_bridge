@@ -32,6 +32,20 @@ impl<'a> IntoWorld<'a> for EntityView<'a> {
     }
 }
 
+impl<'a, T: ComponentId> IntoWorld<'a> for Component<'a, T> {
+    #[inline(always)]
+    fn world(&self) -> WorldRef<'a> {
+        self.base.entity.world
+    }
+}
+
+impl<'a> IntoWorld<'a> for UntypedComponent<'a> {
+    #[inline(always)]
+    fn world(&self) -> WorldRef<'a> {
+        self.world
+    }
+}
+
 impl<'a> IntoWorld<'a> for &'a World {
     #[inline(always)]
     fn world(&self) -> WorldRef<'a> {

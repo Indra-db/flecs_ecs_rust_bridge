@@ -103,7 +103,7 @@ where
     ///
     /// * C++ API: `iter_iterable::set_var`
     #[doc(alias = "iter_iterable::set_var")]
-    pub fn set_var_rule(&mut self, name: &str, value: impl Into<Entity>) -> &mut Self {
+    pub fn set_var_expr(&mut self, name: &str, value: impl Into<Entity>) -> &mut Self {
         let name = compact_str::format_compact!("{}\0", name);
 
         let qit = unsafe { &mut self.iter.priv_.iter.query };
@@ -128,7 +128,7 @@ where
     ///
     /// * C++ API: `iter_iterable::set_var`
     #[doc(alias = "iter_iterable::set_var")]
-    pub fn set_var_table_rule(&mut self, name: &str, table: impl IntoTableRange) -> &mut Self {
+    pub fn set_var_table_expr(&mut self, name: &str, table: impl IntoTableRange) -> &mut Self {
         let name = compact_str::format_compact!("{}\0", name);
 
         let qit = unsafe { &mut self.iter.priv_.iter.query };

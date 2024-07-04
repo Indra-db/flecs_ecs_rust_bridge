@@ -530,7 +530,7 @@ fn query_builder_set_var_by_name() {
 
     let mut count = 0;
     r.iterable()
-        .set_var_rule("Food", pears)
+        .set_var_expr("Food", pears)
         .each_iter(|it, index, ()| {
             assert_eq!(it.entity(index), e2);
             assert_eq!(it.id(0), world.id_first::<Likes>(pears));
@@ -571,8 +571,8 @@ fn query_builder_set_2_vars_by_name() {
 
     let mut count = 0;
     r.iterable()
-        .set_var_rule("Food", pears)
-        .set_var_rule("Person", bob)
+        .set_var_expr("Food", pears)
+        .set_var_expr("Person", bob)
         .each_iter(|it, index, ()| {
             assert_eq!(it.entity(index), alice);
             assert_eq!(it.id(0), world.id_first::<Eats>(pears));
@@ -4113,7 +4113,7 @@ fn query_builder_write_component() {
     let q = world
         .query::<()>()
         .with::<&Position>()
-        .write::<&Position>()
+        .write::<Position>()
         .set_cache_kind(QueryCacheKind::Auto)
         .build();
 

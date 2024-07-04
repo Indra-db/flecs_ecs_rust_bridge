@@ -4,7 +4,7 @@ use crate::core::*;
 use crate::sys;
 
 /// Class for working with entity, component, tag and pair ids.
-/// Class that wraps around a `flecs::id_t`
+/// This wraps an [`Id`].
 ///
 /// A flecs id is an identifier that can be added to entities. Ids can be:
 ///

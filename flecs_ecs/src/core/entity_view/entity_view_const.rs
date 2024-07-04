@@ -418,6 +418,7 @@ impl<'a> EntityView<'a> {
     ///
     /// # See also
     ///
+    /// * [`Table::archetype()`]
     /// * C++ API: `entity_view::type`
     #[doc(alias = "entity_view::type")]
     #[inline(always)]

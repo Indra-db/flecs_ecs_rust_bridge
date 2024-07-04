@@ -62,14 +62,13 @@ fn main() {
     let query_creatures = forest.query::<(&Location, &Ability)>().set_cached().build();
 
     // Filter specifically for enchanted things in the world
-    let query_enchanted = forest.query::<()>().with::<&Enchanted>().build();
+    let mut query_enchanted = forest.query::<()>().with::<&Enchanted>().build();
 
     // Iterate over creatures to find the enchanted ones
     query_creatures.run_iter(|iter, (loc, ability)| {
 
         // Filter for enchanted creatures within the current iteration
         query_enchanted
-            .iterable()
             .set_var_table(0, iter.table_range().unwrap())
             .each_iter( |it, index ,_| {
                let pos = &loc[index];
