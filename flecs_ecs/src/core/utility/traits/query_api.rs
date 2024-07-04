@@ -1005,6 +1005,34 @@ where
         iter.set_var_table_expr(name, table);
         iter
     }
+
+    /// Serialize iterator result to JSON.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `iter::to_json`
+    #[doc(alias = "iter::to_json")]
+    #[cfg(feature = "flecs_json")]
+    fn to_json(&self, desc: Option<&crate::prelude::json::IterToJsonDesc>) -> Option<String> {
+        let desc_ptr = desc
+            .map(|d| d as *const crate::prelude::json::IterToJsonDesc)
+            .unwrap_or(std::ptr::null());
+
+        let mut iter = self.retrieve_iter();
+
+        unsafe {
+            let json_ptr = sys::ecs_iter_to_json(&mut iter, desc_ptr);
+            if json_ptr.is_null() {
+                return None;
+            }
+            let json = std::ffi::CStr::from_ptr(json_ptr)
+                .to_str()
+                .unwrap()
+                .to_string();
+            sys::ecs_os_api.free_.expect("os api is missing")(json_ptr as *mut std::ffi::c_void);
+            Some(json)
+        }
+    }
 }
 
 unsafe extern "C" fn __internal_query_execute_each<T, Func>(iter: *mut IterT)

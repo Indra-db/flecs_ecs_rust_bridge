@@ -4,6 +4,8 @@ using entity_to_json_desc_t = ecs_entity_to_json_desc_t;
 using iter_to_json_desc_t = ecs_iter_to_json_desc_t;
 */
 
+use std::ffi::CString;
+
 use flecs_ecs::sys;
 
 use crate::core::*;
@@ -13,6 +15,12 @@ pub type EntityToJsonDesc = sys::ecs_entity_to_json_desc_t;
 pub type IterToJsonDesc = sys::ecs_iter_to_json_desc_t;
 
 impl<'a> EntityView<'a> {
+    /// Set component or pair id from JSON.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `entity_builder::set_json`
+    #[doc(alias = "entity_builder::set_json")]
     pub fn set_json_id(self, comp: impl IntoId, json: &str, desc: Option<&FromJsonDesc>) -> Self {
         let comp: u64 = *comp.into();
         let world = self.world_ptr_mut();
@@ -49,10 +57,17 @@ impl<'a> EntityView<'a> {
         self
     }
 
+    /// Set component or pair from JSON.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `entity_builder::set_json`
+    #[doc(alias = "entity_builder::set_json")]
     pub fn set_json<T: ComponentOrPairId>(self, json: &str, desc: Option<&FromJsonDesc>) -> Self {
         self.set_json_id(T::get_id(self.world), json, desc)
     }
 
+    /// Set pair from JSON where First is a type and Second is an entity id.
     pub fn set_json_first<T: ComponentId>(
         self,
         second: impl Into<Entity> + Copy,
@@ -62,6 +77,12 @@ impl<'a> EntityView<'a> {
         self.set_json_id((T::get_id(self.world), second), json, desc)
     }
 
+    /// Set pair from JSON where First is an entity id and Second is a type.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `entity_builder::set_json_second`
+    #[doc(alias = "entity_builder::set_json_second")]
     pub fn set_json_second<T: ComponentId>(
         self,
         first: impl Into<Entity> + Copy,
@@ -71,6 +92,12 @@ impl<'a> EntityView<'a> {
         self.set_json_id((first, T::get_id(self.world)), json, desc)
     }
 
+    /// Serialize entity to JSON.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `entity_view::to_json`
+    #[doc(alias = "entity_view::to_json")]
     pub fn to_json(&self, desc: Option<&EntityToJsonDesc>) -> String {
         let world = self.world_ptr();
         let id = *self.id;
@@ -89,7 +116,12 @@ impl<'a> EntityView<'a> {
         }
     }
 
+    /// Deserialize entity to JSON.
     ///
+    /// # See also
+    ///
+    /// * C++ API: `entity::from_json`
+    #[doc(alias = "entity::from_json")]
     pub fn from_json(self, json: &str) -> Self {
         let world = self.world_ptr_mut();
         let id = *self.id;
@@ -99,27 +131,6 @@ impl<'a> EntityView<'a> {
             sys::ecs_entity_from_json(world, id, json.as_ptr() as *const i8, std::ptr::null());
         }
         self
-    }
-}
-
-impl<'a, const IS_RUN: bool, P> TableIter<'a, IS_RUN, P>
-where
-    P: ComponentId,
-{
-    pub fn to_json(&mut self, desc: Option<&IterToJsonDesc>) -> String {
-        let desc_ptr = desc
-            .map(|d| d as *const IterToJsonDesc)
-            .unwrap_or(std::ptr::null());
-
-        unsafe {
-            let json_ptr = sys::ecs_iter_to_json(self.iter, desc_ptr);
-            let json = std::ffi::CStr::from_ptr(json_ptr)
-                .to_str()
-                .unwrap()
-                .to_string();
-            sys::ecs_os_api.free_.expect("os api is missing")(json_ptr as *mut std::ffi::c_void);
-            json
-        }
     }
 }
 
@@ -150,7 +161,7 @@ impl World {
     ///
     /// * C++ API: `world::to_json`
     #[doc(alias = "world::to_json")]
-    pub fn to_json<T: ComponentOrPairId>(&self, value: &T::CastType) -> String {
+    pub fn to_json<'a, T: ComponentOrPairId>(&'a self, value: &'a T::CastType) -> String {
         self.to_json_id(
             T::get_id(self),
             value as *const T::CastType as *const std::ffi::c_void,
@@ -228,7 +239,7 @@ impl World {
     ///
     /// * C++ API: `world::from_json`
     #[doc(alias = "world::from_json")]
-    pub fn from_json_world(&mut self, json: &str, desc: Option<&FromJsonDesc>) -> &mut Self {
+    pub fn from_json_world(&self, json: &str, desc: Option<&FromJsonDesc>) -> &Self {
         let world = self.ptr_mut();
         //TODO json object to prevent multiple conversions
         let json = compact_str::format_compact!("{}\0", json);
