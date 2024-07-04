@@ -1,4 +1,5 @@
 #![doc(hidden)]
+mod component_id_fetcher;
 mod cursor;
 mod declarations;
 mod impl_bindings;
@@ -8,6 +9,7 @@ mod opaque;
 
 use std::ffi::c_void;
 
+pub use component_id_fetcher::*;
 pub use cursor::*;
 pub use declarations::*;
 pub use opaque::*;
@@ -384,6 +386,7 @@ impl<'a> UntypedComponent<'a> {
     ///
     /// * C++ API: `untyped_component::bit`
     pub fn bit(self, name: &str, value: u32) -> Self {
+        let name = compact_str::format_compact!("{}\0", name);
         let world = self.world_ptr_mut();
         let id = *self.id;
 
