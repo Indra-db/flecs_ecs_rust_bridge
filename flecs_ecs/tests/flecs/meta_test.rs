@@ -25,6 +25,58 @@ fn std_string_support(world: WorldRef) -> Opaque<String> {
     ts
 }
 
+fn std_vector_support<T, F: 'static>(world: WorldRef) -> Opaque<Vec<T>, T>
+where
+    F: FnMut() -> T + 'static,
+{
+    const {
+        assert!(std::mem::size_of::<F>() == 0);
+    }
+
+    let id = id!(&world, Vec<T>);
+    let mut ts = Opaque::<Vec<T>, T>::new_id(world, id);
+
+    // Let reflection framework know what kind of type this is
+    ts.as_type(flecs::meta::Vector::ID);
+
+    // Forward std::vector value to (JSON/...) serializer
+    ts.serialize(|s: &Serializer, data: &Vec<T>| {
+        let id = id.id();
+        for el in data.iter() {
+            s.value_id(id, el as *const T as *const std::ffi::c_void);
+        }
+        0
+    });
+
+    // Return vector size
+    ts.count(|data: &mut Vec<T>| data.len());
+
+    fn ensure_generic_element<'a, T, F>(data: &'a mut Vec<T>, elem: usize) -> &'a mut T
+    where
+        F: FnMut() -> T + 'static,
+    {
+        if data.len() <= elem {
+            data.resize_with(elem + 1, (unsafe { std::mem::transmute_copy::<_, F>(&()) }));
+        }
+        &mut data[elem]
+    }
+
+    fn resize_generic_vec<'a, T, F>(data: &'a mut Vec<T>, elem: usize)
+    where
+        F: FnMut() -> T + 'static,
+    {
+        data.resize_with(elem + 1, (unsafe { std::mem::transmute_copy::<_, F>(&()) }));
+    }
+
+    // Ensure element exists, return
+    ts.ensure_element(ensure_generic_element::<T, F>);
+
+    // Resize contents of vector
+    ts.resize(resize_generic_vec::<T, F>);
+
+    ts
+}
+
 #[test]
 fn meta_struct() {
     let world = World::new();
@@ -447,7 +499,7 @@ fn meta_opaque_vector_w_builder() {
 
     world
         .component::<SerVec>()
-        .opaque_collection::<i32>(world.vector::<i32>())
+        .opaque_collection_dyn_id::<i32>(world.vector(id!(&world, i32)))
         .serialize(|s: &Serializer, data: &SerVec| {
             for el in data.value.iter() {
                 s.value(el);
@@ -741,4 +793,38 @@ fn meta_component_as_array() {
         assert_eq!(ptr.type_, world.component_id::<f32>());
         assert_eq!(ptr.count, 2);
     });
+}
+
+/*
+void Meta_ser_deser_std_vector_int(void) {
+    flecs::world world;
+
+    world.component<std::vector<int>>()
+        .opaque(std_vector_support<int>);
+
+    std::vector<int> v = {1, 2, 3};
+    test_str(world.to_json(&v).c_str(), "[1, 2, 3]");
+
+    world.from_json(&v, "[4, 5, 6]");
+    test_str(world.to_json(&v).c_str(), "[4, 5, 6]");
+}
+*/
+
+#[test]
+fn meta_ser_deser_std_vector_int() {
+    let world = World::new();
+
+    fn ret_0() -> i32 {
+        0
+    }
+
+    let id = id!(&world, Vec<i32>);
+    world
+        .component_ext::<Vec<i32>>(id)
+        .opaque_func_id(id!(&world, i32), std_vector_support::<i32, ret_0>);
+    Opaque::<Vec<i32>, i32>::new_id(&world, id);
+
+    let vec: Vec<i32> = vec![1, 2, 3];
+    let json = world.to_json_dyn::<Vec<i32>>(id, &vec);
+    assert_eq!(json, "[1, 2, 3]");
 }
