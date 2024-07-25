@@ -1,7 +1,9 @@
+#![allow(clippy::float_cmp)]
 use std::ffi::CStr;
 
 use flecs_ecs::prelude::meta::*;
 use flecs_ecs::prelude::*;
+use flecs_ecs_sys::ecs_world_t;
 
 fn std_string_support(world: WorldRef) -> Opaque<String> {
     let mut ts = Opaque::<String>::new(world);
@@ -25,23 +27,17 @@ fn std_string_support(world: WorldRef) -> Opaque<String> {
     ts
 }
 
-fn std_vector_support<T, F: 'static>(world: WorldRef) -> Opaque<Vec<T>, T>
-where
-    F: FnMut() -> T + 'static,
-{
-    const {
-        assert!(std::mem::size_of::<F>() == 0);
-    }
-
+fn std_vector_support<T: Default>(world: WorldRef) -> Opaque<Vec<T>, T> {
     let id = id!(&world, Vec<T>);
     let mut ts = Opaque::<Vec<T>, T>::new_id(world, id);
 
     // Let reflection framework know what kind of type this is
-    ts.as_type(flecs::meta::Vector::ID);
+    ts.as_type(world.vector(id));
 
     // Forward std::vector value to (JSON/...) serializer
     ts.serialize(|s: &Serializer, data: &Vec<T>| {
-        let id = id.id();
+        let world = unsafe { WorldRef::from_ptr(s.world as *mut ecs_world_t) };
+        let id = id!(world, T);
         for el in data.iter() {
             s.value_id(id, el as *const T as *const std::ffi::c_void);
         }
@@ -51,28 +47,22 @@ where
     // Return vector size
     ts.count(|data: &mut Vec<T>| data.len());
 
-    fn ensure_generic_element<'a, T, F>(data: &'a mut Vec<T>, elem: usize) -> &'a mut T
-    where
-        F: FnMut() -> T + 'static,
-    {
+    fn ensure_generic_element<T: Default>(data: &mut Vec<T>, elem: usize) -> &mut T {
         if data.len() <= elem {
-            data.resize_with(elem + 1, (unsafe { std::mem::transmute_copy::<_, F>(&()) }));
+            data.resize_with(elem + 1, || T::default());
         }
         &mut data[elem]
     }
 
-    fn resize_generic_vec<'a, T, F>(data: &'a mut Vec<T>, elem: usize)
-    where
-        F: FnMut() -> T + 'static,
-    {
-        data.resize_with(elem + 1, (unsafe { std::mem::transmute_copy::<_, F>(&()) }));
+    fn resize_generic_vec<T: Default>(data: &mut Vec<T>, elem: usize) {
+        data.resize_with(elem + 1, || T::default());
     }
 
     // Ensure element exists, return
-    ts.ensure_element(ensure_generic_element::<T, F>);
+    ts.ensure_element(ensure_generic_element::<T>);
 
     // Resize contents of vector
-    ts.resize(resize_generic_vec::<T, F>);
+    ts.resize(resize_generic_vec::<T>);
 
     ts
 }
@@ -142,6 +132,103 @@ fn meta_nested_struct() {
     a.get::<&flecs::meta::Member>(|mem| {
         assert_eq!(mem.type_, t.id());
     });
+}
+
+/*
+void Meta_struct_w_portable_type(void) {
+    flecs::world ecs;
+
+    struct Test {
+        uintptr_t a;
+        uintptr_t b;
+        flecs::entity_t c;
+        flecs::entity_t d;
+    };
+
+    auto t = ecs.component<Test>()
+        .member<uintptr_t>("a")
+        .member(flecs::Uptr, "b")
+        .member<flecs::entity_t>("c")
+        .member(flecs::Entity, "d");
+    test_assert(t != 0);
+
+    auto a = t.lookup("a");
+    test_assert(a != 0);
+    test_assert( a.has<flecs::Member>() );
+    const flecs::Member *m = a.get<flecs::Member>();
+    test_uint(m->type, ecs.component<uintptr_t>());
+
+    auto b = t.lookup("b");
+    test_assert(b != 0);
+    test_assert( b.has<flecs::Member>() );
+    m = b.get<flecs::Member>();
+    test_uint(m->type, flecs::Uptr);
+
+    auto c = t.lookup("c");
+    test_assert(c != 0);
+    test_assert( c.has<flecs::Member>() );
+    m = c.get<flecs::Member>();
+    test_uint(m->type, flecs::U64);
+
+    auto d = t.lookup("d");
+    test_assert(d != 0);
+    test_assert( d.has<flecs::Member>() );
+    m = d.get<flecs::Member>();
+    test_uint(m->type, flecs::Entity);
+}
+*/
+#[test]
+fn meta_struct_w_portable_type() {
+    let world = World::new();
+
+    #[derive(Component)]
+    struct Test {
+        a: usize,
+        b: usize,
+        c: Entity,
+        d: Entity,
+    }
+
+    let t = world
+        .component::<Test>()
+        .member::<usize>("a", 1, offset_of!(Test, a))
+        .member::<usize>("b", 1, offset_of!(Test, b))
+        .member::<Entity>("c", 1, offset_of!(Test, c))
+        .member::<Entity>("d", 1, offset_of!(Test, d));
+
+    assert!(t.id() != 0);
+
+    let a = t.lookup("a");
+    assert!(a.id() != 0);
+    assert!(a.has::<flecs::meta::Member>());
+
+    a.get::<&flecs::meta::Member>(|mem| {
+        assert_eq!(mem.type_, flecs::meta::UPtr);
+    });
+
+    let b = t.lookup("b");
+    assert!(b.id() != 0);
+    assert!(b.has::<flecs::meta::Member>());
+
+    // b.get::<&flecs::meta::Member>(|mem| {
+    //     assert_eq!(mem.type_, flecs::meta::UPtr);
+    // });
+
+    // let c = t.lookup("c");
+    // assert!(c.id() != 0);
+    // assert!(c.has::<flecs::meta::Member>());
+
+    // c.get::<&flecs::meta::Member>(|mem| {
+    //     assert_eq!(mem.type_, flecs::meta::Entity);
+    // });
+
+    // let d = t.lookup("d");
+    // assert!(d.id() != 0);
+    // assert!(d.has::<flecs::meta::Member>());
+
+    // d.get::<&flecs::meta::Member>(|mem| {
+    //     assert_eq!(mem.type_, flecs::meta::Entity);
+    // });
 }
 
 //TODO meta_units -- units addon is not yet implemented in Rust
@@ -490,7 +577,7 @@ fn meta_opaque_vector_w_builder() {
         pub value: Vec<i32>,
     }
 
-    fn ensure_vec_element<'a>(data: &'a mut SerVec, elem: usize) -> &'a mut i32 {
+    fn ensure_vec_element(data: &mut SerVec, elem: usize) -> &mut i32 {
         if data.value.len() <= elem {
             data.value.resize(elem + 1, 0);
         }
@@ -539,6 +626,7 @@ fn meta_deser_entity_w_path() {
 
 #[repr(C)]
 #[derive(Component)]
+#[allow(clippy::enum_clike_unportable_variant)]
 enum EnumWithBits {
     BitA = 0,
     BitB = 1 << 0,
@@ -795,34 +883,14 @@ fn meta_component_as_array() {
     });
 }
 
-/*
-void Meta_ser_deser_std_vector_int(void) {
-    flecs::world world;
-
-    world.component<std::vector<int>>()
-        .opaque(std_vector_support<int>);
-
-    std::vector<int> v = {1, 2, 3};
-    test_str(world.to_json(&v).c_str(), "[1, 2, 3]");
-
-    world.from_json(&v, "[4, 5, 6]");
-    test_str(world.to_json(&v).c_str(), "[4, 5, 6]");
-}
-*/
-
 #[test]
 fn meta_ser_deser_std_vector_int() {
     let world = World::new();
 
-    fn ret_0() -> i32 {
-        0
-    }
-
     let id = id!(&world, Vec<i32>);
     world
         .component_ext::<Vec<i32>>(id)
-        .opaque_func_id(id!(&world, i32), std_vector_support::<i32, ret_0>);
-    Opaque::<Vec<i32>, i32>::new_id(&world, id);
+        .opaque_func_id::<_, i32>(id, std_vector_support::<i32>);
 
     let vec: Vec<i32> = vec![1, 2, 3];
     let json = world.to_json_dyn::<Vec<i32>>(id, &vec);

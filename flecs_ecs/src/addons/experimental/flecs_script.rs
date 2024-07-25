@@ -281,6 +281,7 @@ impl<'a> Script<'a> {
     ///
     /// * C API: `ecs_ptr_to_expr`
     /// * C++ API: `world::to_expr`
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn to_expr_id(
         world: impl IntoWorld<'a>,
         id_of_value: impl Into<Entity>,

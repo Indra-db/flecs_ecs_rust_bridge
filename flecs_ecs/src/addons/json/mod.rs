@@ -4,11 +4,11 @@ using entity_to_json_desc_t = ecs_entity_to_json_desc_t;
 using iter_to_json_desc_t = ecs_iter_to_json_desc_t;
 */
 
-use std::ffi::CString;
-
 use flecs_ecs::sys;
 
 use crate::core::*;
+
+use super::meta::FetchedId;
 
 pub type FromJsonDesc = sys::ecs_from_json_desc_t;
 pub type EntityToJsonDesc = sys::ecs_entity_to_json_desc_t;
@@ -30,13 +30,12 @@ impl<'a> EntityView<'a> {
             if type_ == 0 {
                 //sys::ecs_err(b"id is not a type\0".as_ptr() as *const i8);
                 //TODO implement ecs_err
-                println!("error: id is not a type");
                 return self;
             }
 
             let ptr = sys::ecs_ensure_id(world, id, comp);
             ecs_assert!(
-                ptr != std::ptr::null_mut(),
+                !ptr.is_null(),
                 FlecsErrorCode::InternalError,
                 "could not add comp to entity"
             );
@@ -141,6 +140,7 @@ impl World {
     ///
     /// * C++ API: `world::to_json`
     #[doc(alias = "world::to_json")]
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn to_json_id(&self, tid: impl IntoId, value: *const std::ffi::c_void) -> String {
         let tid: u64 = *tid.into();
         let world = self.world_ptr();
@@ -168,6 +168,16 @@ impl World {
         )
     }
 
+    /// Serialize value to JSON.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `world::to_json`
+    #[doc(alias = "world::to_json")]
+    pub fn to_json_dyn<'a, T>(&'a self, id: FetchedId<T>, value: &'a T) -> String {
+        self.to_json_id(id.id(), value as *const T as *const std::ffi::c_void)
+    }
+
     /// Serialize world to JSON.
     ///
     /// # See also
@@ -193,6 +203,7 @@ impl World {
     ///
     /// * C++ API: `world::from_json`
     #[doc(alias = "world::from_json")]
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn from_json_id(
         &self,
         tid: impl IntoId,
@@ -230,7 +241,7 @@ impl World {
             value as *mut T::CastType as *mut std::ffi::c_void,
             json,
             desc,
-        )
+        );
     }
 
     /// Deserialize JSON into world.

@@ -9,6 +9,7 @@ pub struct Cursor<'a> {
 
 impl<'a> Cursor<'a> {
     /// Creates a new cursor instance
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn new(
         world: impl IntoWorld<'a>,
         type_id: impl Into<Entity>,
@@ -34,6 +35,7 @@ impl<'a> Cursor<'a> {
     }
 
     /// Move to next member/element
+    #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> i32 {
         unsafe { sys::ecs_meta_next(&mut self.cursor) }
     }

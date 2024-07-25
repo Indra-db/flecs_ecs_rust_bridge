@@ -47,7 +47,7 @@ where
         where
             F: Fn(&mut T, bool),
         {
-            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data)
+            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data);
         }
 
         output::<F, T>
@@ -72,7 +72,7 @@ where
         where
             F: Fn(&mut T, i8),
         {
-            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data)
+            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data);
         }
 
         output::<F, T>
@@ -97,7 +97,7 @@ where
         where
             F: Fn(&mut T, i64),
         {
-            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data)
+            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data);
         }
 
         output::<F, T>
@@ -122,7 +122,7 @@ where
         where
             F: Fn(&mut T, u64),
         {
-            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data)
+            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data);
         }
 
         output::<F, T>
@@ -147,7 +147,7 @@ where
         where
             F: Fn(&mut T, f32),
         {
-            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data)
+            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data);
         }
 
         output::<F, T>
@@ -172,7 +172,7 @@ where
         where
             F: Fn(&mut T, *const i8),
         {
-            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data)
+            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data);
         }
 
         output::<F, T>
@@ -197,7 +197,7 @@ where
         where
             F: Fn(&'a mut T, WorldRef<'a>, Entity),
         {
-            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, world, entity)
+            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, world, entity);
         }
 
         output::<'a, F, T>
@@ -222,7 +222,7 @@ where
         where
             F: Fn(&mut T),
         {
-            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value)
+            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value);
         }
 
         output::<F, T>
@@ -247,7 +247,7 @@ where
         where
             F: Fn(&mut T),
         {
-            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value)
+            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value);
         }
 
         output::<F, T>
@@ -347,7 +347,7 @@ where
         where
             F: Fn(&mut T, usize),
         {
-            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data)
+            (unsafe { std::mem::transmute_copy::<_, F>(&()) })(value, data);
         }
 
         output::<F, T>

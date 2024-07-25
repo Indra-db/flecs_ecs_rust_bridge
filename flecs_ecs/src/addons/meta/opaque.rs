@@ -2,6 +2,7 @@ use crate::core::*;
 use crate::sys::*;
 
 use super::meta_functions::*;
+use super::FetchedId;
 
 /// Serializer object, used for serializing opaque types
 pub type Serializer = ecs_serializer_t;
@@ -10,10 +11,7 @@ pub type Serializer = ecs_serializer_t;
 pub type SerializeT = ecs_meta_serialize_t;
 
 /// Type safe interface for opaque types
-pub struct Opaque<'a, T, ElemType = ()>
-where
-    T: ComponentId,
-{
+pub struct Opaque<'a, T: 'static, ElemType = ()> {
     world: WorldRef<'a>,
     pub desc: ecs_opaque_desc_t,
     phantom: std::marker::PhantomData<T>,
@@ -34,7 +32,20 @@ where
             },
             phantom: std::marker::PhantomData,
             phantom2: std::marker::PhantomData,
-            //opaque_fn_ptrs: Default::default(),
+        }
+    }
+}
+impl<'a, T, ElemType> Opaque<'a, T, ElemType> {
+    /// Creates a new Opaque instance of an internal or external component
+    pub fn new_id(world: impl IntoWorld<'a>, id: FetchedId<T>) -> Self {
+        Self {
+            world: world.world(),
+            desc: ecs_opaque_desc_t {
+                entity: id.id(),
+                type_: Default::default(),
+            },
+            phantom: std::marker::PhantomData,
+            phantom2: std::marker::PhantomData,
         }
     }
 
@@ -201,10 +212,7 @@ where
     }
 }
 
-impl<'a, T, ElemType> Drop for Opaque<'a, T, ElemType>
-where
-    T: ComponentId,
-{
+impl<'a, T, ElemType> Drop for Opaque<'a, T, ElemType> {
     /// Finalizes the opaque type descriptor when it is dropped
     fn drop(&mut self) {
         unsafe {

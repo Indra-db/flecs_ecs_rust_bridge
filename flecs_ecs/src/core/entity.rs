@@ -7,7 +7,6 @@ use std::ops::{BitAnd, BitOr};
 use flecs_ecs_derive::Component;
 
 use crate::core::*;
-use crate::sys;
 
 /// An Identifier for what represents an entity.
 /// An `Entity` is an id that represents either an entity, component, query, observer or system in the world.

@@ -20,6 +20,46 @@ use crate::core::ecs_assert;
 use crate::sys;
 
 impl World {
+    /// Find or register component.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The component type.
+    ///
+    /// # Returns
+    ///
+    /// The found or registered component.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `world::component`
+    #[doc(alias = "world::component")]
+    pub fn component_ext<T>(&self, id: FetchedId<T>) -> Component<T> {
+        Component::<T>::new_id(self, id)
+    }
+
+    /// Find or register component.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The component type.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the component.
+    ///
+    /// # Returns
+    ///
+    /// The found or registered component.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `world::component`
+    #[doc(alias = "world::component")]
+    pub fn component_named_ext<'a, T>(&'a self, id: FetchedId<T>, name: &str) -> Component<'a, T> {
+        Component::<T>::new_named_id(self, id, name)
+    }
+
     /// Return meta cursor to value
     ///
     /// # See also
@@ -116,8 +156,8 @@ impl World {
     /// # See also
     ///
     /// * C++ API: `world::vector`
-    pub fn vector<T: ComponentId>(&self) -> EntityView {
-        self.vector_id(T::get_id(self.world()))
+    pub fn vector<T>(&self, id: FetchedId<T>) -> EntityView {
+        self.vector_id(id)
     }
 }
 
@@ -128,6 +168,7 @@ pub trait EcsSerializer {
 }
 
 impl EcsSerializer for sys::ecs_serializer_t {
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     fn value_id(&self, type_id: impl Into<Entity>, value: *const c_void) -> i32 {
         if let Some(value_func) = self.value {
             unsafe { value_func(self, *type_id.into(), value) }
@@ -154,6 +195,81 @@ impl EcsSerializer for sys::ecs_serializer_t {
 }
 
 /// Register opaque type interface
+impl<'a, T: 'static> Component<'a, T> {
+    /// # See also
+    ///
+    /// * C++ API: `component::opaque`
+    #[doc(alias = "component::opaque")]
+    pub fn opaque_func_id<Func, Elem>(&self, id: FetchedId<T>, func: Func) -> &Self
+    where
+        Func: FnOnce(WorldRef<'a>) -> Opaque<'a, T, Elem>,
+    {
+        let mut opaque = func(self.world());
+        opaque.desc.entity = id.id();
+        unsafe { sys::ecs_opaque_init(self.world_ptr_mut(), &opaque.desc) };
+        self
+    }
+
+    /// # See also
+    ///
+    /// * C++ API: `component::opaque`
+    #[doc(alias = "component::opaque")]
+    pub fn opaque_id(&self, id: FetchedId<T>) -> Opaque<'a, T> {
+        let mut opaque = Opaque::<T>::new_id(self.world(), id);
+        opaque.as_type(id.id());
+        opaque
+    }
+
+    /// # See also
+    ///
+    /// * C++ API: `component::opaque`
+    #[doc(alias = "component::opaque")]
+    pub fn opaque_dyn_id<E>(&self, id_type: E, id_field: E) -> Opaque<'a, T>
+    where
+        E: Into<Entity> + Copy,
+    {
+        let mut opaque = Opaque::<T>::new_id(self.world(), FetchedId::<T>::new(*id_type.into()));
+        opaque.as_type(id_field);
+        opaque
+    }
+
+    /// Return opaque type builder for collection type
+    /// # See also
+    ///
+    /// * C++ API: `component::opaque`
+    pub fn opaque_collection<ElemType>(&self, id: FetchedId<T>) -> Opaque<'a, T, ElemType> {
+        let mut opaque = Opaque::<T, ElemType>::new_id(self.world(), id);
+        opaque.as_type(id.id());
+        opaque
+    }
+
+    /// Return opaque type builder for collection type
+    /// # See also
+    ///
+    /// * C++ API: `component::opaque`
+    pub fn opaque_collection_dyn_id<ElemType>(
+        &self,
+        id: impl Into<Entity>,
+    ) -> Opaque<'a, T, ElemType> {
+        let id: Entity = id.into();
+        let copy_id = id;
+        let mut opaque = Opaque::<T, ElemType>::new_id(self.world(), FetchedId::<T>::new(*id));
+        opaque.as_type(copy_id);
+        opaque
+    }
+
+    /// Add constant.
+    ///
+    /// # See also
+    ///
+    /// * C++ API: `component::constant`
+    pub fn constant(&self, name: &str, value: impl Into<i32>) -> &Self {
+        UntypedComponent::constant(self, name, value);
+        self
+    }
+}
+
+/// Register opaque type interface
 impl<'a, T: ComponentId> Component<'a, T> {
     /// # See also
     ///
@@ -172,42 +288,8 @@ impl<'a, T: ComponentId> Component<'a, T> {
     /// # See also
     ///
     /// * C++ API: `component::opaque`
-    #[doc(alias = "component::opaque")]
-    pub fn opaque_id(&self, type_id: impl Into<Entity>) -> Opaque<'a, T> {
-        let mut opaque = Opaque::<T>::new(self.world());
-        opaque.as_type(type_id);
-        opaque
-    }
-
-    /// # See also
-    ///
-    /// * C++ API: `component::opaque`
-    pub fn opaque<TypeId: ComponentId>(&self) -> Opaque<'a, T> {
-        self.opaque_id(TypeId::get_id(self.world()))
-    }
-
-    //TODO figure out if it should be into<Entity> or IntoId
-    /// Return opaque type builder for collection type
-    /// # See also
-    ///
-    /// * C++ API: `component::opaque`
-    pub fn opaque_collection<ElemType>(
-        &self,
-        type_id: impl Into<Entity>,
-    ) -> Opaque<'a, T, ElemType> {
-        let mut opaque = Opaque::<T, ElemType>::new(self.world());
-        opaque.as_type(type_id);
-        opaque
-    }
-
-    /// Add constant.
-    ///
-    /// # See also
-    ///
-    /// * C++ API: `component::constant`
-    pub fn constant(&self, name: &str, value: impl Into<i32>) -> &Self {
-        UntypedComponent::constant(&self, name, value);
-        self
+    pub fn opaque<FieldId: ComponentId>(&self) -> Opaque<'a, T> {
+        self.opaque_dyn_id(T::get_id(self.world()), FieldId::get_id(self.world()))
     }
 }
 
@@ -244,7 +326,7 @@ impl<'a> UntypedComponent<'a> {
                 ecs_pair(flecs::meta::Constant::ID, flecs::meta::I32::ID),
                 std::mem::size_of::<i32>(),
                 &value as *const i32 as *const c_void,
-            )
+            );
         };
         self
     }
@@ -284,7 +366,7 @@ impl<'a> UntypedComponent<'a> {
 
         let member: sys::EcsMember = sys::EcsMember {
             type_: type_id,
-            unit: unit,
+            unit,
             count,
             offset,
         };
@@ -413,7 +495,7 @@ impl<'a> UntypedComponent<'a> {
                 ecs_pair(flecs::meta::Constant::ID, flecs::meta::U32::ID),
                 std::mem::size_of::<u32>(),
                 &value as *const u32 as *const c_void,
-            )
+            );
         };
         self
     }
@@ -603,7 +685,7 @@ impl<'a> EntityView<'a> {
                 self.world_ptr_mut(),
                 *self.id,
                 ecs_pair(flecs::meta::Quantity::ID, *quantity.into()),
-            )
+            );
         };
         self
     }
@@ -634,8 +716,6 @@ impl<'a> EntityView<'a> {
 mod tests {
     use crate::prelude::*;
 
-    use super::*;
-
     // pub type SerializeFn<T> = extern "C" fn(*const Serializer, *const T) -> i32;
 
     #[derive(Debug, Clone, Component)]
@@ -643,44 +723,44 @@ mod tests {
         value: i32,
     }
 
-    //#[test]
-    fn test_opaque() {
-        let world = World::new();
-        world
-            .component::<Int>()
-            .opaque::<flecs::meta::I32>()
-            .serialize(|s: &meta::Serializer, i: &Int| s.value::<i32>(&i.value));
+    // //#[test]
+    // fn test_opaque() {
+    //     let world = World::new();
+    //     world
+    //         .component::<Int>()
+    //         .opaque::<flecs::meta::I32>()
+    //         .serialize(|s: &meta::Serializer, i: &Int| s.value::<i32>(&i.value));
 
-        let int_type = Int { value: 10 };
+    //     let int_type = Int { value: 10 };
 
-        let json = world.to_json::<Int>(&int_type);
+    //     let json = world.to_json::<Int>(&int_type);
 
-        println!("{}", json);
-        assert_eq!("10", json);
-    }
+    //     println!("{}", json);
+    //     assert_eq!("10", json);
+    // }
 
-    #[derive(Component, Default)]
-    struct Position {
-        x: f32,
-        y: f32,
-    }
+    // #[derive(Component, Default)]
+    // struct Position {
+    //     x: f32,
+    //     y: f32,
+    // }
 
-    //#[test]
-    fn test_expr() {
-        let world = World::new();
+    // //#[test]
+    // fn test_expr() {
+    //     let world = World::new();
 
-        world
-            .component::<Position>()
-            .member::<f32>("x", 1, std::mem::offset_of!(Position, x) as i32)
-            .member::<f32>("y", 1, std::mem::offset_of!(Position, y) as i32);
+    //     world
+    //         .component::<Position>()
+    //         .member::<f32>("x", 1, std::mem::offset_of!(Position, x) as i32)
+    //         .member::<f32>("y", 1, std::mem::offset_of!(Position, y) as i32);
 
-        let e = world.entity().set(Position { x: 10.0, y: 20.0 });
+    //     let e = world.entity().set(Position { x: 10.0, y: 20.0 });
 
-        let pos_id = <Position as ComponentId>::id(&world);
+    //     let pos_id = <Position as ComponentId>::id(&world);
 
-        // e.get::<&Position>(|pos| {
-        //     let expr = world.to_expr(pos);
-        //     println!("{}", expr);
-        // });
-    }
+    //     // e.get::<&Position>(|pos| {
+    //     //     let expr = world.to_expr(pos);
+    //     //     println!("{}", expr);
+    //     // });
+    // }
 }

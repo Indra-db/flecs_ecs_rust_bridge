@@ -2,6 +2,10 @@
 members = ["flecs_ecs", "flecs_ecs_derive", "flecs_ecs_sys"]
 resolver = "2"
 
+exclude = [
+    "flecs_ecs_test"
+] 
+
 [workspace.package]
 edition = "2021"
 license = "MIT"

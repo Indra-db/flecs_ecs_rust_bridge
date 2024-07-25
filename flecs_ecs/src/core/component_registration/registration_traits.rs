@@ -64,12 +64,12 @@ impl<T> ComponentType<Enum> for &mut T where T: ComponentType<Enum> {}
 ///
 /// proc macro Component should be used to implement this trait automatically
 ///
-#[cfg_attr(doctest, doc = " ````no_test")]
 /// ```
-///     #[derive(Component)] //this will implement the trait for the type
-///      struct Position {
-///          vec: Vec<i32>,
-///      }
+/// # use flecs_ecs::prelude::Component;
+/// #[derive(Component)] //this will implement the trait for the type
+/// struct Position {
+///     vec: Vec<i32>,
+/// }
 /// ```
 ///
 /// The `ComponentId` trait is designed to maintain component IDs for a Rust type

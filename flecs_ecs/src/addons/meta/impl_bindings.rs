@@ -1,7 +1,5 @@
 use flecs_ecs::prelude::*;
 
-use flecs_ecs::addons::meta::declarations::*;
-
 use super::Opaque;
 
 //impl_component_traits_binding_type!(EcsMember);
