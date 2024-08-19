@@ -21,6 +21,13 @@ where
     where
         Func: FnMut(T::TupleType<'_>) + 'static,
     {
+        const {
+            assert!(
+                !T::CONTAINS_ANY_TAG_TERM,
+                "a type provided in the query signature is a Tag and cannot be used with `.each`. use `.run` instead or provide the tag with `.with()`"
+            );
+        }
+
         let each_func = Box::new(func);
         let each_static_ref = Box::leak(each_func);
 
@@ -37,6 +44,13 @@ where
     where
         Func: FnMut(EntityView, T::TupleType<'_>) + 'static,
     {
+        const {
+            assert!(
+                !T::CONTAINS_ANY_TAG_TERM,
+                "a type provided in the query signature is a Tag and cannot be used with `.each`. use `.run` instead or provide the tag with `.with()`"
+            );
+        }
+
         let each_entity_func = Box::new(func);
         let each_entity_static_ref = Box::leak(each_entity_func);
 
@@ -92,6 +106,13 @@ where
     where
         Func: FnMut(TableIter<false, P>, usize, T::TupleType<'_>) + 'static,
     {
+        const {
+            assert!(
+                !T::CONTAINS_ANY_TAG_TERM,
+                "a type provided in the query signature is a Tag and cannot be used with `.each`. use `.run` instead or provide the tag with `.with()`"
+            );
+        }
+
         let each_iter_func = Box::new(func);
         let each_iter_static_ref = Box::leak(each_iter_func);
 

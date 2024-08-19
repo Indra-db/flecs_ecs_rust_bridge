@@ -263,7 +263,7 @@ where
 pub trait QueryTuple: Sized {
     type Pointers: ComponentPointers<Self>;
     type TupleType<'a>;
-    type TupleSliceType<'a>;
+    const CONTAINS_ANY_TAG_TERM: bool;
     const COUNT: i32;
 
     fn create_ptrs(iter: &sys::ecs_iter_t) -> Self::Pointers {
@@ -321,7 +321,7 @@ where
 { 
     type Pointers = ComponentsData<A, 1>;
     type TupleType<'w> = A::ActualType<'w>;
-    type TupleSliceType<'w> = A::SliceType<'w>;
+    const CONTAINS_ANY_TAG_TERM: bool = <<A::OnlyPairType as ComponentId>::UnderlyingType as ComponentInfo>::IS_TAG;
     const COUNT : i32 = 1;
 
     fn populate<'a>(query: &mut impl QueryBuilderImpl<'a>) {
@@ -509,9 +509,8 @@ macro_rules! impl_iterable {
                 $t::ActualType<'w>,
             )*);
 
-            type TupleSliceType<'w> = ($(
-                $t::SliceType<'w>,
-            )*);
+            const CONTAINS_ANY_TAG_TERM: bool = $(<<$t::OnlyPairType as ComponentId>::UnderlyingType as ComponentInfo>::IS_TAG ||)* false;
+
             type Pointers = ComponentsData<Self, { tuple_count!($($t),*) }>;
             const COUNT : i32 = tuple_count!($($t),*);
 

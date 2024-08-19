@@ -39,6 +39,13 @@ where
     /// * C++ API: `iterable::each`
     #[doc(alias = "iterable::each")]
     fn each(&self, mut func: impl FnMut(T::TupleType<'_>)) {
+        const {
+            assert!(
+                !T::CONTAINS_ANY_TAG_TERM,
+                "a type provided in the query signature is a Tag and cannot be used with `.each`. use `.run` instead or provide the tag with `.with()`"
+            );
+        }
+
         unsafe {
             let mut iter = self.retrieve_iter();
             iter.flags |= sys::EcsIterCppEach;
@@ -76,6 +83,13 @@ where
     /// * C++ API: `iterable::each`
     #[doc(alias = "iterable::each")]
     fn each_entity(&self, mut func: impl FnMut(EntityView, T::TupleType<'_>)) {
+        const {
+            assert!(
+                !T::CONTAINS_ANY_TAG_TERM,
+                "a type provided in the query signature is a Tag and cannot be used with `.each`. use `.run` instead or provide the tag with `.with()`"
+            );
+        }
+
         unsafe {
             let world = self.world_ptr_mut();
             let mut iter = self.retrieve_iter();
@@ -159,6 +173,12 @@ where
     where
         P: ComponentId,
     {
+        const {
+            assert!(
+                !T::CONTAINS_ANY_TAG_TERM,
+                "a type provided in the query signature is a Tag and cannot be used with `.each`. use `.run` instead or provide the tag with `.with()`"
+            );
+        }
         unsafe {
             let world = self.world_ptr_mut();
             let mut iter = self.retrieve_iter();
