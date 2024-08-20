@@ -1,6 +1,6 @@
 # ![Flecs](flecs_ecs/assets/flecs_rust_logo.png)
 
-[![Generic badge](https://img.shields.io/badge/Flecs_Version-4.0.0-E56717.svg)](https://github.com/SanderMertens/flecs/releases)
+[![Generic badge](https://img.shields.io/badge/Flecs_Version-4.0.1-E56717.svg)](https://github.com/SanderMertens/flecs/releases)
 [![License](https://badgen.net/pypi/license/pip/)](https://github.com/Indra-db/Flecs-Rust/blob/master/LICENSE)
 [![CI](https://github.com/indra-db/Flecs-Rust/actions/workflows/ci.yml/badge.svg)](https://github.com/indra-db/Flecs-Rust/actions/workflows/ci.yml)
 [![Flecs Official Docs](https://img.shields.io/badge/Flecs%20C%2FC%2B%2B%20Docs-View-161b22)](https://www.flecs.dev/flecs/md_docs_2Docs.html)
