@@ -1652,6 +1652,26 @@ fn system_custom_pipeline_w_kind() {
 }
 
 #[test]
+fn system_kind_while_deferred() {
+    let world = World::new();
+
+    let sys = world.defer(|| {
+        world
+            .system::<()>()
+            .kind_id(flecs::pipeline::OnValidate::ID)
+            .run(|_| {})
+    });
+
+    world.progress();
+
+    let sys = sys.entity_view(&world);
+    assert!(sys.has_id(flecs::pipeline::OnValidate::ID));
+    assert!(sys.has_first::<flecs::DependsOn>(flecs::pipeline::OnValidate::ID));
+    assert!(!sys.has_id(flecs::pipeline::OnUpdate::ID));
+    assert!(!sys.has_first::<flecs::DependsOn>(flecs::pipeline::OnUpdate::ID));
+}
+
+#[test]
 fn system_create_w_no_template_args() {
     let world = World::new();
 
