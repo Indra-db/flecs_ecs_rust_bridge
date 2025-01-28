@@ -13,6 +13,9 @@ where
     pub(crate) desc: sys::ecs_system_desc_t,
     term_builder: TermBuilder,
     world: WorldRef<'a>,
+    /// Skip setting default phase (`OnUpdate`) if `kind` was set,
+    /// or an existing entity was passed in (via [`Self::new_from_desc`])
+    kind_set: bool,
     _phantom: std::marker::PhantomData<&'a T>,
 }
 
@@ -26,22 +29,13 @@ where
             desc: Default::default(),
             term_builder: TermBuilder::default(),
             world: world.into(),
+            kind_set: false,
             _phantom: std::marker::PhantomData,
         };
 
         obj.desc.entity = unsafe { sys::ecs_entity_init(obj.world_ptr_mut(), &Default::default()) };
 
         T::populate(&mut obj);
-
-        #[cfg(feature = "flecs_pipeline")]
-        unsafe {
-            sys::ecs_add_id(
-                world.world_ptr_mut(),
-                obj.desc.entity,
-                ecs_dependson(ECS_ON_UPDATE),
-            );
-            sys::ecs_add_id(world.world_ptr_mut(), obj.desc.entity, ECS_ON_UPDATE);
-        }
 
         obj
     }
@@ -51,25 +45,19 @@ where
             desc,
             term_builder: TermBuilder::default(),
             world: world.into(),
+            kind_set: false,
             _phantom: std::marker::PhantomData,
         };
 
         if obj.desc.entity == 0 {
             obj.desc.entity =
                 unsafe { sys::ecs_entity_init(obj.world_ptr_mut(), &Default::default()) };
+        } else {
+            // Can't make assumptions about the kind on an existing entity.
+            obj.kind_set = true;
         }
 
         T::populate(&mut obj);
-
-        #[cfg(feature = "flecs_pipeline")]
-        unsafe {
-            sys::ecs_add_id(
-                world.world_ptr_mut(),
-                obj.desc.entity,
-                ecs_dependson(ECS_ON_UPDATE),
-            );
-            sys::ecs_add_id(world.world_ptr_mut(), obj.desc.entity, ECS_ON_UPDATE);
-        }
 
         obj
     }
@@ -82,6 +70,7 @@ where
             desc: Default::default(),
             term_builder: TermBuilder::default(),
             world: world.into(),
+            kind_set: false,
             _phantom: std::marker::PhantomData,
         };
 
@@ -95,15 +84,6 @@ where
 
         T::populate(&mut obj);
 
-        #[cfg(feature = "flecs_pipeline")]
-        unsafe {
-            sys::ecs_add_id(
-                world.world_ptr_mut(),
-                obj.desc.entity,
-                ecs_dependson(ECS_ON_UPDATE),
-            );
-            sys::ecs_add_id(world.world_ptr_mut(), obj.desc.entity, ECS_ON_UPDATE);
-        }
         obj
     }
 
@@ -134,6 +114,7 @@ where
             if phase != 0 {
                 sys::ecs_add_id(self.world_ptr_mut(), self.desc.entity, ecs_dependson(phase));
                 sys::ecs_add_id(self.world_ptr_mut(), self.desc.entity, phase);
+                self.kind_set = true;
             }
         };
         self
@@ -249,6 +230,22 @@ where
     /// * C++ API: `node_builder::build`
     #[doc(alias = "node_builder::build")]
     fn build(&mut self) -> Self::BuiltType {
+        #[cfg(feature = "flecs_pipeline")]
+        if !self.kind_set {
+            unsafe {
+                sys::ecs_add_id(
+                    self.world().world_ptr_mut(),
+                    self.desc.entity,
+                    ecs_dependson(ECS_ON_UPDATE),
+                );
+                sys::ecs_add_id(
+                    self.world().world_ptr_mut(),
+                    self.desc.entity,
+                    ECS_ON_UPDATE,
+                );
+            }
+        }
+
         let system = System::new(self.world(), self.desc);
         for s in self.term_builder.str_ptrs_to_free.iter_mut() {
             unsafe { std::mem::ManuallyDrop::drop(s) };
