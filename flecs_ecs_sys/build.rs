@@ -72,7 +72,8 @@ fn generate_bindings() {
         .raw_line("use super::*;")
         .raw_line("use libc::FILE;")
         .clang_arg("-DFLECS_CUSTOM_BUILD")
-        .clang_arg("-DFLECS_CPP");
+        .clang_arg("-DFLECS_CPP")
+        .clang_arg(format!("--target={}", std::env::var("HOST").unwrap()));
 
     #[cfg(feature = "flecs_perf_trace")]
     {
